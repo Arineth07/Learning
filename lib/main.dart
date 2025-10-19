@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:path_provider/path_provider.dart';
 
+import 'models/models.dart';
 import 'utils/app_theme.dart';
 
 // TODO: Import screens as they are created in subsequent phases
@@ -28,15 +28,20 @@ void main() async {
     // Initialize Hive for local database storage
     await Hive.initFlutter();
 
-    // TODO: Register Hive type adapters as models are created
-    // Example:
-    // Hive.registerAdapter(QuestionAdapter());
-    // Hive.registerAdapter(TopicAdapter());
-    // Hive.registerAdapter(SubjectAdapter());
-    // Hive.registerAdapter(UserProgressAdapter());
-    // Hive.registerAdapter(PerformanceMetricsAdapter());
-    // Hive.registerAdapter(KnowledgeGapAdapter());
-    // Hive.registerAdapter(LearningSessionAdapter());
+    // Register enum adapters
+    Hive.registerAdapter(DifficultyLevelAdapter());
+    Hive.registerAdapter(QuestionTypeAdapter());
+    Hive.registerAdapter(SubjectCategoryAdapter());
+    Hive.registerAdapter(GapSeverityAdapter());
+
+    // Register model adapters
+    Hive.registerAdapter(SubjectAdapter());
+    Hive.registerAdapter(TopicAdapter());
+    Hive.registerAdapter(QuestionAdapter());
+    Hive.registerAdapter(UserProgressAdapter());
+    Hive.registerAdapter(PerformanceMetricsAdapter());
+    Hive.registerAdapter(KnowledgeGapAdapter());
+    Hive.registerAdapter(LearningSessionAdapter());
 
     runApp(const AITutorApp());
   } catch (e) {
@@ -51,47 +56,60 @@ class AITutorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Since no services are implemented yet, return MaterialApp directly
-    return MaterialApp(
-      title: 'AI Tutor',
-      debugShowCheckedModeBanner: false,
-
-      // Use theme configurations from app_theme.dart
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.system,
-
-      // Initial route
-      initialRoute: '/',
-
-      // Named routes for navigation
-      routes: {
-        '/': (context) => const PlaceholderHomeScreen(),
-        // TODO: Add routes as screens are created
-        // '/question': (context) => const QuestionScreen(),
-        // '/progress': (context) => const ProgressScreen(),
-        // '/settings': (context) => const SettingsScreen(),
-      },
-
-      // Dynamic route handling for routes with parameters
-      onGenerateRoute: (settings) {
-        // TODO: Implement dynamic route handling as needed
+    // Wrap MaterialApp with MultiProvider for future service providers
+    return MultiProvider(
+      providers: [
+        // Dummy provider to satisfy MultiProvider's non-empty requirement
+        Provider<bool>.value(value: true),
+        // TODO: Add providers here as services are implemented
         // Example:
-        // if (settings.name == '/question') {
-        //   final args = settings.arguments as Map<String, dynamic>;
-        //   return MaterialPageRoute(
-        //     builder: (context) => QuestionScreen(questionId: args['id']),
-        //   );
-        // }
-        return null;
-      },
+        // ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        // ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // ProxyProvider<AuthProvider, ApiService>(
+        //   update: (_, auth, __) => ApiService(auth),
+        // ),
+      ],
+      child: MaterialApp(
+        title: 'AI Tutor',
+        debugShowCheckedModeBanner: false,
 
-      // Handle unknown routes
-      onUnknownRoute: (settings) {
-        return MaterialPageRoute(
-          builder: (context) => const PlaceholderHomeScreen(),
-        );
-      },
+        // Use theme configurations from app_theme.dart
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: ThemeMode.system,
+
+        // Initial route
+        initialRoute: '/',
+
+        // Named routes for navigation
+        routes: {
+          '/': (context) => const PlaceholderHomeScreen(),
+          // TODO: Add routes as screens are created
+          // '/question': (context) => const QuestionScreen(),
+          // '/progress': (context) => const ProgressScreen(),
+          // '/settings': (context) => const SettingsScreen(),
+        },
+
+        // Dynamic route handling for routes with parameters
+        onGenerateRoute: (settings) {
+          // TODO: Implement dynamic route handling as needed
+          // Example:
+          // if (settings.name == '/question') {
+          //   final args = settings.arguments as Map<String, dynamic>;
+          //   return MaterialPageRoute(
+          //     builder: (context) => QuestionScreen(questionId: args['id']),
+          //   );
+          // }
+          return null;
+        },
+
+        // Handle unknown routes
+        onUnknownRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (context) => const PlaceholderHomeScreen(),
+          );
+        },
+      ),
     );
   }
 }
