@@ -70,11 +70,7 @@ class ContentRepositoryImpl implements ContentRepository {
       return Result.success(subjects);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get subjects',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get subjects', cause: e, stackTrace: st),
       );
     }
   }
@@ -85,18 +81,12 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
       final subject = _contentService.getSubjectById(id);
       if (subject == null) {
-        return Result.error(
-          NotFoundFailure('Subject with ID $id not found'),
-        );
+        return Result.error(NotFoundFailure('Subject with ID $id not found'));
       }
       return Result.success(subject);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get subject',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get subject', cause: e, stackTrace: st),
       );
     }
   }
@@ -105,22 +95,22 @@ class ContentRepositoryImpl implements ContentRepository {
   Future<Result<Subject>> getSubjectByCategory(SubjectCategory category) async {
     try {
       _checkInitialized();
-      final subject = _contentService.subjects
-          .where((s) => s.category == category)
-          .firstOrNull;
-      if (subject == null) {
-        return Result.error(
-          NotFoundFailure('No subject found for category $category'),
-        );
-      }
-      return Result.success(subject);
+      return Result.success(
+        _contentService.subjects.firstWhere(
+          (s) => s.category == category,
+          orElse: () =>
+              throw NotFoundFailure('No subject found for category $category'),
+        ),
+      );
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get subject by category',
-          cause: e,
-          stackTrace: st,
-        ),
+        e is NotFoundFailure
+            ? e
+            : UnknownFailure(
+                'Failed to get subject by category',
+                cause: e,
+                stackTrace: st,
+              ),
       );
     }
   }
@@ -133,11 +123,7 @@ class ContentRepositoryImpl implements ContentRepository {
       return Result.success(topics);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get topics',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get topics', cause: e, stackTrace: st),
       );
     }
   }
@@ -148,18 +134,12 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
       final topic = _contentService.getTopicById(id);
       if (topic == null) {
-        return Result.error(
-          NotFoundFailure('Topic with ID $id not found'),
-        );
+        return Result.error(NotFoundFailure('Topic with ID $id not found'));
       }
       return Result.success(topic);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get topic',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get topic', cause: e, stackTrace: st),
       );
     }
   }
@@ -219,7 +199,8 @@ class ContentRepositoryImpl implements ContentRepository {
         // Check prerequisites
         for (final prerequisiteId in topic.prerequisiteTopicIds) {
           final progressResult = await _userProgressRepository!
-              .getTopicProgress(userId, prerequisiteId);
+              .getTopicProgress(userId, prerequisiteId)
+              .timeout(QueryLimits.operationTimeout);
 
           final progress = progressResult.fold(
             (progress) => progress,
@@ -258,13 +239,12 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
       final currentTopic = _contentService.getTopicById(currentTopicId);
       if (currentTopic == null) {
-        return Result.error(
-          NotFoundFailure('Current topic not found'),
-        );
+        return Result.error(NotFoundFailure('Current topic not found'));
       }
 
-      final subjectTopics =
-          _contentService.getTopicsBySubjectId(currentTopic.subjectId);
+      final subjectTopics = _contentService.getTopicsBySubjectId(
+        currentTopic.subjectId,
+      );
 
       final currentIndex = subjectTopics.indexOf(currentTopic);
       if (currentIndex == -1 || currentIndex >= subjectTopics.length - 1) {
@@ -273,12 +253,13 @@ class ContentRepositoryImpl implements ContentRepository {
       }
 
       final nextTopic = subjectTopics[currentIndex + 1];
-      
+
       // Check prerequisites if user progress is available
       if (_userProgressRepository != null) {
         for (final prerequisiteId in nextTopic.prerequisiteTopicIds) {
           final progressResult = await _userProgressRepository!
-              .getTopicProgress(userId, prerequisiteId);
+              .getTopicProgress(userId, prerequisiteId)
+              .timeout(QueryLimits.operationTimeout);
 
           final progress = progressResult.fold(
             (progress) => progress,
@@ -295,11 +276,7 @@ class ContentRepositoryImpl implements ContentRepository {
       return Result.success(nextTopic);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get next topic',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get next topic', cause: e, stackTrace: st),
       );
     }
   }
@@ -312,11 +289,7 @@ class ContentRepositoryImpl implements ContentRepository {
       return Result.success(questions);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get questions',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get questions', cause: e, stackTrace: st),
       );
     }
   }
@@ -327,18 +300,12 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
       final question = _contentService.getQuestionById(id);
       if (question == null) {
-        return Result.error(
-          NotFoundFailure('Question with ID $id not found'),
-        );
+        return Result.error(NotFoundFailure('Question with ID $id not found'));
       }
       return Result.success(question);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get question',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get question', cause: e, stackTrace: st),
       );
     }
   }
@@ -417,9 +384,7 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
 
       if (count < 1) {
-        return Result.error(
-          ValidationFailure('Count must be positive'),
-        );
+        return Result.error(ValidationFailure('Count must be positive'));
       }
 
       var questions = _contentService.getQuestionsByTopicId(topicId);
@@ -438,10 +403,10 @@ class ContentRepositoryImpl implements ContentRepository {
         );
       }
 
-      questions.shuffle();
-      questions = questions.take(count).toList();
+      final shuffled = List<Question>.from(questions)..shuffle();
+      final selected = shuffled.take(count).toList();
 
-      return Result.success(questions);
+      return Result.success(selected);
     } catch (e, st) {
       return Result.error(
         UnknownFailure(
@@ -461,7 +426,7 @@ class ContentRepositoryImpl implements ContentRepository {
   ) async {
     try {
       _checkInitialized();
-      
+
       // Get questions for topic and difficulty
       final questions = _contentService.getQuestionsByTopicAndDifficulty(
         topicId,
@@ -474,13 +439,14 @@ class ContentRepositoryImpl implements ContentRepository {
 
       if (_userProgressRepository == null) {
         // Without progress tracking, return a random question
-        questions.shuffle();
-        return Result.success(questions.first);
+        final shuffled = List<Question>.from(questions)..shuffle();
+        return Result.success(shuffled.first);
       }
 
       // Get user's performance for this topic
       final performanceResult = await _userProgressRepository!
-          .getTopicProgress(userId, topicId);
+          .getTopicProgress(userId, topicId)
+          .timeout(QueryLimits.operationTimeout);
 
       final performance = performanceResult.fold(
         (progress) => progress,
@@ -494,23 +460,20 @@ class ContentRepositoryImpl implements ContentRepository {
 
       // Filter out recently answered questions
       final recentQuestions = performance.recentQuestionIds.toSet();
-      var availableQuestions =
-          questions.where((q) => !recentQuestions.contains(q.id)).toList();
+      var availableQuestions = questions
+          .where((q) => !recentQuestions.contains(q.id))
+          .toList();
 
       if (availableQuestions.isEmpty) {
         // All questions attempted, return least recently answered
-        availableQuestions = questions;
+        availableQuestions = List<Question>.from(questions);
       }
 
-      availableQuestions.shuffle();
-      return Result.success(availableQuestions.first);
+      final shuffled = List<Question>.from(availableQuestions)..shuffle();
+      return Result.success(shuffled.first);
     } catch (e, st) {
       return Result.error(
-        UnknownFailure(
-          'Failed to get next question',
-          cause: e,
-          stackTrace: st,
-        ),
+        UnknownFailure('Failed to get next question', cause: e, stackTrace: st),
       );
     }
   }
@@ -571,11 +534,7 @@ class ContentRepositoryImpl implements ContentRepository {
       final Map<QuestionType, int> counts = {};
 
       for (final question in questions) {
-        counts.update(
-          question.type,
-          (count) => count + 1,
-          ifAbsent: () => 1,
-        );
+        counts.update(question.type, (count) => count + 1, ifAbsent: () => 1);
       }
 
       return Result.success(counts);

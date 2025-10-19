@@ -36,12 +36,12 @@ class ContentConstants {
   // Asset paths for bundled content
   static const String mathematicsAsset = 'lib/data/mathematics.json';
   static const String programmingAsset = 'lib/data/programming.json';
-  
+
   // Content validation limits
   static const int minQuestionsPerTopic = 5;
   static const int maxQuestionsPerTopic = 20;
   static const int minTopicsPerSubject = 3;
-  
+
   // Content cache settings
   static const Duration contentCacheExpiry = Duration(hours: 24);
   static const bool enableContentValidation = true;

@@ -5,13 +5,11 @@ import 'package:provider/provider.dart';
 import 'models/models.dart';
 import 'utils/app_theme.dart';
 
-// TODO: Import screens as they are created in subsequent phases
-// import 'screens/dashboard_screen.dart';
-// import 'screens/question_screen.dart';
-// import 'screens/progress_screen.dart';
-// import 'screens/settings_screen.dart';
+import 'screens/question_screen.dart';
+import 'screens/question_screen_arguments.dart';
 
 import 'services/database_service.dart';
+import 'services/content_service.dart';
 import 'repositories/repositories.dart';
 
 void main() async {
@@ -40,23 +38,27 @@ void main() async {
     // Initialize DatabaseService
     final db = DatabaseService();
     final dbInit = await db.initialize();
-    if (dbInit.isError) {
-      debugPrint('Error initializing database: ${dbInit.error?.message}');
-      runApp(const ErrorApp(message: 'Failed to initialize database'));
-      return;
-    }
-
-    // Initialize ContentService
-    final contentService = ContentService.instance;
-    final contentInit = await contentService.initialize();
-    if (contentInit.isError) {
-      debugPrint('Error loading content: ${contentInit.error?.message}');
-      runApp(const ErrorApp(message: 'Failed to load learning content'));
-      return;
-    }
-
-    // All initialization successful
-    runApp(const AITutorApp());
+    dbInit.fold(
+      (_) async {
+        // Database initialized, now initialize ContentService
+        final contentService = ContentService.instance;
+        final contentInit = await contentService.initialize();
+        contentInit.fold(
+          (_) {
+            // All initialization successful
+            runApp(const AITutorApp());
+          },
+          (failure) {
+            debugPrint('Error loading content: ${failure.message}');
+            runApp(const ErrorApp(message: 'Failed to load learning content'));
+          },
+        );
+      },
+      (failure) {
+        debugPrint('Error initializing database: ${failure.message}');
+        runApp(const ErrorApp(message: 'Failed to initialize database'));
+      },
+    );
   } catch (e) {
     // Handle initialization errors
     debugPrint('Error initializing app: $e');
@@ -72,7 +74,11 @@ class AITutorApp extends StatelessWidget {
     // Wrap MaterialApp with MultiProvider for future service providers
     return MultiProvider(
       providers: [
+        // Core services
         ChangeNotifierProvider.value(value: DatabaseService.instance),
+        ChangeNotifierProvider.value(value: ContentService.instance),
+
+        // Data repositories
         ProxyProvider<DatabaseService, UserProgressRepository>(
           update: (_, db, __) => UserProgressRepositoryImpl(db),
         ),
@@ -84,6 +90,16 @@ class AITutorApp extends StatelessWidget {
         ),
         ProxyProvider<DatabaseService, LearningSessionRepository>(
           update: (_, db, __) => LearningSessionRepositoryImpl(db),
+        ),
+
+        // Content repository
+        ProxyProvider2<
+          ContentService,
+          UserProgressRepository,
+          ContentRepository
+        >(
+          update: (_, contentService, userProgress, __) =>
+              ContentRepositoryImpl(contentService, userProgress),
         ),
       ],
       child: MaterialApp(
@@ -101,22 +117,27 @@ class AITutorApp extends StatelessWidget {
         // Named routes for navigation
         routes: {
           '/': (context) => const PlaceholderHomeScreen(),
-          // TODO: Add routes as screens are created
-          // '/question': (context) => const QuestionScreen(),
-          // '/progress': (context) => const ProgressScreen(),
-          // '/settings': (context) => const SettingsScreen(),
+          '/question': (context) => const QuestionScreen(),
         },
 
         // Dynamic route handling for routes with parameters
         onGenerateRoute: (settings) {
-          // TODO: Implement dynamic route handling as needed
-          // Example:
-          // if (settings.name == '/question') {
-          //   final args = settings.arguments as Map<String, dynamic>;
-          //   return MaterialPageRoute(
-          //     builder: (context) => QuestionScreen(questionId: args['id']),
-          //   );
-          // }
+          if (settings.name == '/question') {
+            final args = settings.arguments as QuestionScreenArguments?;
+            if (args == null) {
+              // Handle missing arguments - return error screen
+              return MaterialPageRoute(
+                builder: (context) => const PlaceholderHomeScreen(),
+              );
+            }
+            return MaterialPageRoute(
+              builder: (context) => const QuestionScreen(),
+              settings: RouteSettings(
+                name: '/question',
+                arguments: args,
+              ),
+            );
+          }
           return null;
         },
 
@@ -186,7 +207,9 @@ class PlaceholderHomeScreen extends StatelessWidget {
 
 /// Error app displayed when initialization fails
 class ErrorApp extends StatelessWidget {
-  const ErrorApp({super.key});
+  final String message;
+
+  const ErrorApp({super.key, this.message = 'Failed to Initialize App'});
 
   @override
   Widget build(BuildContext context) {
@@ -198,9 +221,13 @@ class ErrorApp extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 100, color: Colors.red),
               const SizedBox(height: 24),
-              const Text(
-                'Failed to Initialize App',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               const Padding(

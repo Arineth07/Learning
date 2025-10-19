@@ -17,7 +17,7 @@ class ContentService extends ChangeNotifier {
   // State
   bool _isInitialized = false;
   DateTime? _lastLoadedAt;
-  
+
   // Cache
   final Map<String, Subject> _subjects = {};
   final Map<String, Topic> _topics = {};
@@ -31,12 +31,12 @@ class ContentService extends ChangeNotifier {
     _checkInitialized();
     return _subjects.values.toList();
   }
-  
+
   List<Topic> get topics {
     _checkInitialized();
     return _topics.values.toList();
   }
-  
+
   List<Question> get questions {
     _checkInitialized();
     return _questions.values.toList();
@@ -57,13 +57,13 @@ class ContentService extends ChangeNotifier {
     try {
       // Load mathematics content
       await _loadSubjectContent(ContentConstants.mathematicsAsset);
-      
+
       // Load programming content
       await _loadSubjectContent(ContentConstants.programmingAsset);
-      
+
       // Build lookup indexes
       _buildIndexes();
-      
+
       // Validate content if enabled
       if (ContentConstants.enableContentValidation) {
         final validationResult = _validateContent();
@@ -76,7 +76,6 @@ class ContentService extends ChangeNotifier {
       _lastLoadedAt = DateTime.now();
       notifyListeners();
       return const Result.success(null);
-
     } on FlutterError catch (e, st) {
       return Result.error(
         NotFoundFailure(
@@ -85,6 +84,9 @@ class ContentService extends ChangeNotifier {
           stackTrace: st,
         ),
       );
+    } on Failure catch (f) {
+      // Preserve specific failure types from _loadSubjectContent
+      return Result.error(f);
     } catch (e, st) {
       return Result.error(
         UnknownFailure(
@@ -101,20 +103,22 @@ class ContentService extends ChangeNotifier {
     try {
       final jsonString = await rootBundle.loadString(assetPath);
       final Map<String, dynamic> data = jsonDecode(jsonString);
-      
+
       // Parse subject
       final subject = Subject.fromJson(data['subject'] as Map<String, dynamic>);
       _subjects[subject.id] = subject;
-      
+
       // Parse topics
       for (final topicJson in data['topics'] as List<dynamic>) {
         final topic = Topic.fromJson(topicJson as Map<String, dynamic>);
         _topics[topic.id] = topic;
       }
-      
+
       // Parse questions
       for (final questionJson in data['questions'] as List<dynamic>) {
-        final question = Question.fromJson(questionJson as Map<String, dynamic>);
+        final question = Question.fromJson(
+          questionJson as Map<String, dynamic>,
+        );
         _questions[question.id] = question;
       }
     } on FormatException catch (e, st) {
@@ -136,21 +140,36 @@ class ContentService extends ChangeNotifier {
   void _buildIndexes() {
     // Group topics by subject
     for (final topic in _topics.values) {
-      _topicsBySubject
-        .putIfAbsent(topic.subjectId, () => [])
-        .add(topic);
+      _topicsBySubject.putIfAbsent(topic.subjectId, () => []).add(topic);
     }
-    
-    // Sort topics by order within each subject
-    for (final topics in _topicsBySubject.values) {
-      topics.sort((a, b) => a.order.compareTo(b.order));
+
+    // Sort topics according to their order in subject.topicIds
+    for (final subject in _subjects.values) {
+      final topicsList = _topicsBySubject[subject.id];
+      if (topicsList != null) {
+        // Create index map from subject.topicIds
+        final orderMap = Map.fromEntries(
+          subject.topicIds.asMap().entries.map((e) => MapEntry(e.value, e.key)),
+        );
+
+        // Sort using the index map (fallback to name if not in map)
+        topicsList.sort((a, b) {
+          final orderA = orderMap[a.id];
+          final orderB = orderMap[b.id];
+
+          if (orderA == null && orderB == null) {
+            return a.name.compareTo(b.name);
+          }
+          if (orderA == null) return 1;
+          if (orderB == null) return -1;
+          return orderA.compareTo(orderB);
+        });
+      }
     }
-    
+
     // Group questions by topic
     for (final question in _questions.values) {
-      _questionsByTopic
-        .putIfAbsent(question.topicId, () => [])
-        .add(question);
+      _questionsByTopic.putIfAbsent(question.topicId, () => []).add(question);
     }
   }
 
@@ -159,27 +178,23 @@ class ContentService extends ChangeNotifier {
     try {
       // Check for duplicate IDs
       _checkDuplicateIds();
-      
+
       // Validate reference integrity
       _validateReferences();
-      
+
       // Validate business rules
       _validateBusinessRules();
-      
+
       return const Result.success(null);
     } catch (e, st) {
-      return Result.error(
-        ValidationFailure(
-          e.toString(),
-          stackTrace: st,
-        ),
-      );
+      return Result.error(ValidationFailure(e.toString(), stackTrace: st));
     }
   }
 
   void _checkDuplicateIds() {
     final allIds = {..._subjects.keys, ..._topics.keys, ..._questions.keys};
-    if (allIds.length != _subjects.length + _topics.length + _questions.length) {
+    if (allIds.length !=
+        _subjects.length + _topics.length + _questions.length) {
       throw ValidationFailure('Duplicate IDs found in content');
     }
   }
@@ -267,7 +282,7 @@ class ContentService extends ChangeNotifier {
     if (visited.contains(topicId)) {
       throw ValidationFailure('Circular prerequisite dependency detected');
     }
-    
+
     visited.add(topicId);
     final topic = _topics[topicId];
     for (final prerequisiteId in topic!.prerequisiteTopicIds) {
@@ -312,10 +327,7 @@ class ContentService extends ChangeNotifier {
         [];
   }
 
-  List<Question> getQuestionsByTopicAndType(
-    String topicId,
-    QuestionType type,
-  ) {
+  List<Question> getQuestionsByTopicAndType(String topicId, QuestionType type) {
     _checkInitialized();
     return _questionsByTopic[topicId]?.where((q) => q.type == type).toList() ??
         [];
