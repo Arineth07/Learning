@@ -11,14 +11,8 @@ import 'utils/app_theme.dart';
 // import 'screens/progress_screen.dart';
 // import 'screens/settings_screen.dart';
 
-// TODO: Import services as they are created in subsequent phases
-// import 'services/database_service.dart';
-// import 'services/content_service.dart';
-// import 'services/adaptive_learning_service.dart';
-// import 'services/knowledge_gap_service.dart';
-// import 'services/recommendation_service.dart';
-// import 'services/connectivity_service.dart';
-// import 'services/sync_service.dart';
+import 'services/database_service.dart';
+import 'repositories/repositories.dart';
 
 void main() async {
   // Ensure Flutter is initialized before async operations
@@ -43,6 +37,25 @@ void main() async {
     Hive.registerAdapter(KnowledgeGapAdapter());
     Hive.registerAdapter(LearningSessionAdapter());
 
+    // Initialize DatabaseService
+    final db = DatabaseService();
+    final dbInit = await db.initialize();
+    if (dbInit.isError) {
+      debugPrint('Error initializing database: ${dbInit.error?.message}');
+      runApp(const ErrorApp(message: 'Failed to initialize database'));
+      return;
+    }
+
+    // Initialize ContentService
+    final contentService = ContentService.instance;
+    final contentInit = await contentService.initialize();
+    if (contentInit.isError) {
+      debugPrint('Error loading content: ${contentInit.error?.message}');
+      runApp(const ErrorApp(message: 'Failed to load learning content'));
+      return;
+    }
+
+    // All initialization successful
     runApp(const AITutorApp());
   } catch (e) {
     // Handle initialization errors
@@ -59,15 +72,19 @@ class AITutorApp extends StatelessWidget {
     // Wrap MaterialApp with MultiProvider for future service providers
     return MultiProvider(
       providers: [
-        // Dummy provider to satisfy MultiProvider's non-empty requirement
-        Provider<bool>.value(value: true),
-        // TODO: Add providers here as services are implemented
-        // Example:
-        // ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        // ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // ProxyProvider<AuthProvider, ApiService>(
-        //   update: (_, auth, __) => ApiService(auth),
-        // ),
+        ChangeNotifierProvider.value(value: DatabaseService.instance),
+        ProxyProvider<DatabaseService, UserProgressRepository>(
+          update: (_, db, __) => UserProgressRepositoryImpl(db),
+        ),
+        ProxyProvider<DatabaseService, PerformanceMetricsRepository>(
+          update: (_, db, __) => PerformanceMetricsRepositoryImpl(db),
+        ),
+        ProxyProvider<DatabaseService, KnowledgeGapRepository>(
+          update: (_, db, __) => KnowledgeGapRepositoryImpl(db),
+        ),
+        ProxyProvider<DatabaseService, LearningSessionRepository>(
+          update: (_, db, __) => LearningSessionRepositoryImpl(db),
+        ),
       ],
       child: MaterialApp(
         title: 'AI Tutor',

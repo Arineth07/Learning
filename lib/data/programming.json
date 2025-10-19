@@ -1,0 +1,239 @@
+{
+  "subject": {
+    "id": "programming",
+    "name": "Programming Fundamentals",
+    "description": "Core programming concepts and problem-solving skills",
+    "category": "programming",
+    "topicIds": [
+      "prog_variables",
+      "prog_control_flow",
+      "prog_functions",
+      "prog_arrays",
+      "prog_oop",
+      "prog_sorting",
+      "prog_data_structures"
+    ],
+    "createdAt": "2025-10-19T00:00:00Z",
+    "updatedAt": "2025-10-19T00:00:00Z",
+    "isActive": true
+  },
+  "topics": [
+    {
+      "id": "prog_variables",
+      "name": "Variables and Data Types",
+      "description": "Understanding variables, data types, and type conversion",
+      "subjectId": "programming",
+      "difficulty": "beginner",
+      "estimatedDurationMinutes": 25,
+      "prerequisiteTopicIds": [],
+      "questionIds": [
+        "prog_variables_beginner_001",
+        "prog_variables_beginner_002",
+        "prog_variables_beginner_003",
+        "prog_variables_intermediate_001",
+        "prog_variables_intermediate_002"
+      ],
+      "order": 1,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_control_flow",
+      "name": "Control Flow",
+      "description": "If-else statements, loops, and conditional logic",
+      "subjectId": "programming",
+      "difficulty": "beginner",
+      "estimatedDurationMinutes": 30,
+      "prerequisiteTopicIds": ["prog_variables"],
+      "questionIds": [
+        "prog_control_flow_beginner_001",
+        "prog_control_flow_beginner_002",
+        "prog_control_flow_beginner_003",
+        "prog_control_flow_intermediate_001",
+        "prog_control_flow_intermediate_002"
+      ],
+      "order": 2,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_functions",
+      "name": "Functions",
+      "description": "Function definition, parameters, return values, and scope",
+      "subjectId": "programming",
+      "difficulty": "intermediate",
+      "estimatedDurationMinutes": 45,
+      "prerequisiteTopicIds": ["prog_control_flow"],
+      "questionIds": [
+        "prog_functions_intermediate_001",
+        "prog_functions_intermediate_002",
+        "prog_functions_intermediate_003",
+        "prog_functions_advanced_001",
+        "prog_functions_advanced_002"
+      ],
+      "order": 3,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_arrays",
+      "name": "Arrays and Lists",
+      "description": "Array operations, indexing, and list manipulation",
+      "subjectId": "programming",
+      "difficulty": "intermediate",
+      "estimatedDurationMinutes": 40,
+      "prerequisiteTopicIds": ["prog_variables"],
+      "questionIds": [
+        "prog_arrays_intermediate_001",
+        "prog_arrays_intermediate_002",
+        "prog_arrays_intermediate_003",
+        "prog_arrays_advanced_001",
+        "prog_arrays_advanced_002"
+      ],
+      "order": 4,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_oop",
+      "name": "Object-Oriented Programming",
+      "description": "Classes, objects, inheritance, and encapsulation",
+      "subjectId": "programming",
+      "difficulty": "advanced",
+      "estimatedDurationMinutes": 60,
+      "prerequisiteTopicIds": ["prog_functions"],
+      "questionIds": [
+        "prog_oop_advanced_001",
+        "prog_oop_advanced_002",
+        "prog_oop_advanced_003",
+        "prog_oop_expert_001",
+        "prog_oop_expert_002"
+      ],
+      "order": 5,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_sorting",
+      "name": "Algorithms - Sorting",
+      "description": "Bubble sort, selection sort, and algorithm complexity",
+      "subjectId": "programming",
+      "difficulty": "advanced",
+      "estimatedDurationMinutes": 50,
+      "prerequisiteTopicIds": ["prog_arrays"],
+      "questionIds": [
+        "prog_sorting_advanced_001",
+        "prog_sorting_advanced_002",
+        "prog_sorting_advanced_003",
+        "prog_sorting_expert_001",
+        "prog_sorting_expert_002"
+      ],
+      "order": 6,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_data_structures",
+      "name": "Data Structures",
+      "description": "Stacks, queues, linked lists, and trees",
+      "subjectId": "programming",
+      "difficulty": "expert",
+      "estimatedDurationMinutes": 90,
+      "prerequisiteTopicIds": ["prog_oop", "prog_arrays"],
+      "questionIds": [
+        "prog_data_structures_advanced_001",
+        "prog_data_structures_advanced_002",
+        "prog_data_structures_expert_001",
+        "prog_data_structures_expert_002",
+        "prog_data_structures_expert_003"
+      ],
+      "order": 7,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    }
+  ],
+  "questions": [
+    {
+      "id": "prog_variables_beginner_001",
+      "text": "Which of the following is a valid variable name in most programming languages?",
+      "options": ["2variable", "variable_2", "variable-2", "variable 2"],
+      "correctAnswer": "variable_2",
+      "explanation": "Valid variable names:\n1. Cannot start with a number\n2. Cannot contain spaces\n3. Cannot contain special characters (except underscore)\n4. Can contain letters, numbers, and underscores",
+      "topicId": "prog_variables",
+      "difficulty": "beginner",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 60,
+      "points": 10,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_control_flow_beginner_001",
+      "text": "What will this code print? if (5 > 3): print('A') else: print('B')",
+      "options": ["A", "B", "AB", "Error"],
+      "correctAnswer": "A",
+      "explanation": "Since 5 is greater than 3, the condition (5 > 3) evaluates to true.\nTherefore, the code inside the if block will execute, printing 'A'.",
+      "topicId": "prog_control_flow",
+      "difficulty": "beginner",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 60,
+      "points": 10,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_functions_intermediate_001",
+      "text": "What does this function return? def add(a, b): return a + b",
+      "options": ["Sum of a and b", "Product of a and b", "None", "Error"],
+      "correctAnswer": "Sum of a and b",
+      "explanation": "The function 'add' takes two parameters 'a' and 'b' and uses the + operator to add them together.\nThe return statement sends the result back to the caller.",
+      "topicId": "prog_functions",
+      "difficulty": "intermediate",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 90,
+      "points": 20,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_arrays_intermediate_001",
+      "text": "What is the index of the first element in an array?",
+      "options": ["0", "1", "-1", "Depends on language"],
+      "correctAnswer": "0",
+      "explanation": "In most modern programming languages (including Python, JavaScript, Java, C++, and Dart),\narray indexing starts at 0. This is called zero-based indexing.",
+      "topicId": "prog_arrays",
+      "difficulty": "intermediate",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 60,
+      "points": 20,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "prog_oop_advanced_001",
+      "text": "What is encapsulation in OOP?",
+      "options": ["Hiding implementation details", "Creating multiple objects", "Inheriting properties", "Overloading methods"],
+      "correctAnswer": "Hiding implementation details",
+      "explanation": "Encapsulation is one of the fundamental OOP principles that involves:\n1. Bundling data and methods that operate on that data within a single unit (class)\n2. Hiding internal details and providing an interface\n3. Controlling access to internal state through public methods",
+      "topicId": "prog_oop",
+      "difficulty": "advanced",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 120,
+      "points": 30,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    }
+  ]
+}

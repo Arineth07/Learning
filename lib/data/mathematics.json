@@ -1,0 +1,239 @@
+{
+  "subject": {
+    "id": "math",
+    "name": "Mathematics",
+    "description": "Fundamental mathematics concepts for engineering students",
+    "category": "mathematics",
+    "topicIds": [
+      "math_linear_equations",
+      "math_quadratic_equations",
+      "math_trigonometry",
+      "math_derivatives",
+      "math_integrals",
+      "math_matrices",
+      "math_probability"
+    ],
+    "createdAt": "2025-10-19T00:00:00Z",
+    "updatedAt": "2025-10-19T00:00:00Z",
+    "isActive": true
+  },
+  "topics": [
+    {
+      "id": "math_linear_equations",
+      "name": "Linear Equations",
+      "description": "Solving linear equations and systems",
+      "subjectId": "math",
+      "difficulty": "beginner",
+      "estimatedDurationMinutes": 30,
+      "prerequisiteTopicIds": [],
+      "questionIds": [
+        "math_linear_equations_beginner_001",
+        "math_linear_equations_beginner_002",
+        "math_linear_equations_beginner_003",
+        "math_linear_equations_intermediate_001",
+        "math_linear_equations_intermediate_002"
+      ],
+      "order": 1,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_quadratic_equations",
+      "name": "Quadratic Equations",
+      "description": "Solving quadratic equations using various methods",
+      "subjectId": "math",
+      "difficulty": "intermediate",
+      "estimatedDurationMinutes": 45,
+      "prerequisiteTopicIds": ["math_linear_equations"],
+      "questionIds": [
+        "math_quadratic_equations_intermediate_001",
+        "math_quadratic_equations_intermediate_002",
+        "math_quadratic_equations_intermediate_003",
+        "math_quadratic_equations_advanced_001",
+        "math_quadratic_equations_advanced_002"
+      ],
+      "order": 2,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_trigonometry",
+      "name": "Trigonometry Basics",
+      "description": "Sine, cosine, tangent and their applications",
+      "subjectId": "math",
+      "difficulty": "intermediate",
+      "estimatedDurationMinutes": 60,
+      "prerequisiteTopicIds": [],
+      "questionIds": [
+        "math_trigonometry_intermediate_001",
+        "math_trigonometry_intermediate_002",
+        "math_trigonometry_intermediate_003",
+        "math_trigonometry_advanced_001",
+        "math_trigonometry_advanced_002"
+      ],
+      "order": 3,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_derivatives",
+      "name": "Calculus - Derivatives",
+      "description": "Basic differentiation rules and applications",
+      "subjectId": "math",
+      "difficulty": "advanced",
+      "estimatedDurationMinutes": 90,
+      "prerequisiteTopicIds": ["math_linear_equations"],
+      "questionIds": [
+        "math_derivatives_advanced_001",
+        "math_derivatives_advanced_002",
+        "math_derivatives_advanced_003",
+        "math_derivatives_expert_001",
+        "math_derivatives_expert_002"
+      ],
+      "order": 4,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_integrals",
+      "name": "Calculus - Integrals",
+      "description": "Integration techniques and applications",
+      "subjectId": "math",
+      "difficulty": "advanced",
+      "estimatedDurationMinutes": 90,
+      "prerequisiteTopicIds": ["math_derivatives"],
+      "questionIds": [
+        "math_integrals_advanced_001",
+        "math_integrals_advanced_002",
+        "math_integrals_advanced_003",
+        "math_integrals_expert_001",
+        "math_integrals_expert_002"
+      ],
+      "order": 5,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_matrices",
+      "name": "Matrices",
+      "description": "Matrix operations and determinants",
+      "subjectId": "math",
+      "difficulty": "intermediate",
+      "estimatedDurationMinutes": 60,
+      "prerequisiteTopicIds": [],
+      "questionIds": [
+        "math_matrices_intermediate_001",
+        "math_matrices_intermediate_002",
+        "math_matrices_intermediate_003",
+        "math_matrices_advanced_001",
+        "math_matrices_advanced_002"
+      ],
+      "order": 6,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_probability",
+      "name": "Probability",
+      "description": "Basic probability concepts and calculations",
+      "subjectId": "math",
+      "difficulty": "beginner",
+      "estimatedDurationMinutes": 45,
+      "prerequisiteTopicIds": [],
+      "questionIds": [
+        "math_probability_beginner_001",
+        "math_probability_beginner_002",
+        "math_probability_beginner_003",
+        "math_probability_intermediate_001",
+        "math_probability_intermediate_002"
+      ],
+      "order": 7,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    }
+  ],
+  "questions": [
+    {
+      "id": "math_linear_equations_beginner_001",
+      "text": "Solve for x: 2x + 5 = 13",
+      "options": ["x = 2", "x = 3", "x = 4", "x = 5"],
+      "correctAnswer": "x = 4",
+      "explanation": "1. Subtract 5 from both sides: 2x = 8\n2. Divide both sides by 2: x = 4",
+      "topicId": "math_linear_equations",
+      "difficulty": "beginner",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 60,
+      "points": 10,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_linear_equations_beginner_002",
+      "text": "What is the value of y in: 3y - 7 = 8?",
+      "options": ["y = 3", "y = 4", "y = 5", "y = 6"],
+      "correctAnswer": "y = 5",
+      "explanation": "1. Add 7 to both sides: 3y = 15\n2. Divide both sides by 3: y = 5",
+      "topicId": "math_linear_equations",
+      "difficulty": "beginner",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 60,
+      "points": 10,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_quadratic_equations_intermediate_001",
+      "text": "Find the roots of x² - 5x + 6 = 0",
+      "options": ["x = 2, 3", "x = 1, 4", "x = -2, 3", "x = 2, -3"],
+      "correctAnswer": "x = 2, 3",
+      "explanation": "Using factoring method:\n1. x² - 5x + 6 = (x - 2)(x - 3)\n2. Set each factor to zero:\nx - 2 = 0 → x = 2\nx - 3 = 0 → x = 3",
+      "topicId": "math_quadratic_equations",
+      "difficulty": "intermediate",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 120,
+      "points": 20,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_trigonometry_intermediate_001",
+      "text": "What is sin(30°)?",
+      "options": ["0.25", "0.5", "0.707", "1"],
+      "correctAnswer": "0.5",
+      "explanation": "sin(30°) = 1/2 = 0.5 is one of the standard trigonometric values that should be memorized.",
+      "topicId": "math_trigonometry",
+      "difficulty": "intermediate",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 60,
+      "points": 20,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "math_derivatives_advanced_001",
+      "text": "Find the derivative of f(x) = 3x² + 2x - 5",
+      "options": ["f'(x) = 6x + 2", "f'(x) = 3x + 2", "f'(x) = 6x - 5", "f'(x) = 3x² + 2"],
+      "correctAnswer": "f'(x) = 6x + 2",
+      "explanation": "Using power rule:\n1. d/dx(3x²) = 3 · 2x = 6x\n2. d/dx(2x) = 2\n3. d/dx(-5) = 0\n4. Combine terms: f'(x) = 6x + 2",
+      "topicId": "math_derivatives",
+      "difficulty": "advanced",
+      "type": "multipleChoice",
+      "estimatedTimeSeconds": 120,
+      "points": 30,
+      "createdAt": "2025-10-19T00:00:00Z",
+      "updatedAt": "2025-10-19T00:00:00Z",
+      "isActive": true
+    }
+  ]
+}
