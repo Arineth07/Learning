@@ -1,3 +1,41 @@
+// --- Connectivity Service Configuration ---
+class ConnectivityConstants {
+  // Connectivity Monitoring
+  static const int checkIntervalSeconds = 30;
+  static const int timeoutSeconds = 10;
+  static const String reachabilityCheckUrl = 'https://www.google.com';
+  static const bool enablePeriodicChecks = true;
+  static const bool cacheConnectivityState = true;
+
+  // Sync Queue
+  static const int maxQueueSize = 100;
+  static const int maxRetryAttempts = 3;
+  static const int retryDelaySeconds = 5;
+  static const int maxRetryDelaySeconds = 60;
+  static const bool persistQueueToStorage = true;
+  static const bool autoProcessOnConnect = true;
+  static const String queueStorageKey = 'sync_queue';
+
+  // UI Indicator
+  static const bool showBannerOnOffline = true;
+  static const bool bannerDismissible = true;
+  static const int bannerAutoDismissSeconds = 5;
+  static const bool showSnackBarOnReconnect = true;
+  static const String indicatorPosition = 'appBar';
+
+  // Feature Availability
+  static const List<String> offlineFeatures = [
+    'practice',
+    'review',
+    'progress',
+  ];
+  static const List<String> onlineOnlyFeatures = [
+    'cloud_ai',
+    'sync',
+    'leaderboard',
+  ];
+}
+
 /// Recommendation engine configuration constants
 class RecommendationConstants {
   // Scoring Weights

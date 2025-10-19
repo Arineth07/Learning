@@ -7,6 +7,9 @@ import '../repositories/content_repository.dart';
 import '../repositories/learning_session_repository.dart';
 import '../services/recommendation_service.dart';
 import '../widgets/widgets.dart';
+import '../services/connectivity_service.dart';
+import '../widgets/connectivity_banner.dart';
+import '../widgets/connectivity_indicator.dart';
 import 'question_screen_arguments.dart';
 
 class QuestionScreen extends StatefulWidget {
@@ -197,6 +200,24 @@ class _QuestionScreenState extends State<QuestionScreen> {
         return;
       }
 
+      // Inform user if offline; progress will be synced later
+      try {
+        final conn = context.read<ConnectivityService>();
+        if (!conn.isOnline) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('You are offline. Progress will be synced when connection is available.'),
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      } catch (_) {
+        // ConnectivityService may not be registered in the widget tree in tests;
+        // fail silently.
+      }
+
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -322,6 +343,16 @@ class _QuestionScreenState extends State<QuestionScreen> {
         (s) => _session = s,
         (f) => debugPrint('Failed to end session: ${f.message}'),
       );
+      // Queue session upload for later if offline or to guarantee delivery.
+      try {
+        context.read<ConnectivityService>().addToSyncQueue(
+          'session',
+          _session!.toJson(),
+          priority: 4,
+        );
+      } catch (_) {
+        // ignore if connectivity service not available
+      }
     } catch (e) {
       debugPrint('Failed to end session: $e');
     }
@@ -372,6 +403,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
                   ),
                 ),
               ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ConnectivityIndicator(),
+          ),
           ],
         ),
         body: _buildBody(),
@@ -415,6 +450,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
     return Column(
       children: [
+        ConnectivityBanner(),
         ProgressIndicatorWidget(
           currentQuestionIndex: _currentQuestionIndex,
           totalQuestions: _questions.length,

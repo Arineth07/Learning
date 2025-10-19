@@ -14,6 +14,10 @@ import 'services/content_service.dart';
 import 'services/knowledge_gap_service.dart';
 import 'services/recommendation_service.dart';
 import 'repositories/repositories.dart';
+import 'services/connectivity_service.dart';
+import 'widgets/connectivity_indicator.dart';
+import 'widgets/connectivity_banner.dart';
+import 'widgets/sync_status_widget.dart';
 
 void main() async {
   // Ensure Flutter is initialized before async operations
@@ -47,11 +51,22 @@ void main() async {
         final contentService = ContentService.instance;
         final contentInit = await contentService.initialize();
         contentInit.fold(
-          (_) {
-            // All initialization successful
+          (_) async {
+            // All initialization successful - initialize connectivity service (non-critical)
+            try {
+              final connectivityService = ConnectivityService.instance;
+              final connInit = await connectivityService.initialize();
+              connInit.fold(
+                (_) => debugPrint('Connectivity service initialized'),
+                (failure) => debugPrint('Warning: Connectivity failed to initialize: ${failure.message}'),
+              );
+            } catch (e) {
+              debugPrint('Warning: Connectivity initialization threw: $e');
+            }
+            // Launch the app regardless of connectivity initialization result
             runApp(const AITutorApp());
           },
-          (failure) {
+          (failure) async {
             debugPrint('Error loading content: ${failure.message}');
             runApp(const ErrorApp(message: 'Failed to load learning content'));
           },
@@ -80,6 +95,9 @@ class AITutorApp extends StatelessWidget {
         // Core services
         ChangeNotifierProvider.value(value: DatabaseService.instance),
         ChangeNotifierProvider.value(value: ContentService.instance),
+
+        // Connectivity service (provides online/offline state and sync queue)
+        ChangeNotifierProvider.value(value: ConnectivityService.instance),
 
         // Data repositories
         ProxyProvider<DatabaseService, UserProgressRepository>(
@@ -133,6 +151,7 @@ class AITutorApp extends StatelessWidget {
                 return service;
               },
         ),
+
         // Knowledge gap service
         ChangeNotifierProvider.value(value: KnowledgeGapService.instance),
         ProxyProvider3<
@@ -155,12 +174,13 @@ class AITutorApp extends StatelessWidget {
 
         // Recommendation service
         ChangeNotifierProvider.value(value: RecommendationService.instance),
-        ProxyProvider5<
+        ProxyProvider6<
           AdaptiveLearningService,
           KnowledgeGapService,
           ContentRepository,
           UserProgressRepository,
           LearningSessionRepository,
+          ConnectivityService,
           RecommendationService
         >(
           update:
@@ -171,6 +191,7 @@ class AITutorApp extends StatelessWidget {
                 content,
                 userProgress,
                 learningSession,
+                connectivity,
                 previous,
               ) {
                 final recommendationService =
@@ -179,6 +200,7 @@ class AITutorApp extends StatelessWidget {
                   adaptiveLearningService: adaptiveLearning,
                   knowledgeGapService: knowledgeGap,
                   contentRepository: content,
+                  connectivityService: connectivity,
                   userProgressRepository: userProgress,
                   learningSessionRepository: learningSession,
                 );
@@ -241,59 +263,77 @@ class PlaceholderHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('AI Tutor'),
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        actions: [
+          // Compact sync status indicator
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: SyncStatusWidget(compact: true),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ConnectivityIndicator(),
+          ),
+        ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.school,
-              size: 100,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'AI Tutor App',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Under Development',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                'Setting up your personalized learning experience...',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                // Test navigation to QuestionScreen
-                Navigator.pushNamed(
-                  context,
-                  '/question',
-                  arguments: QuestionScreenArguments(
-                    topicId: 'math_linear_equations', // Example topic ID
-                    difficulty: DifficultyLevel.beginner,
-                    questionCount: 5, // Shorter session for testing
+      body: Column(
+        children: [
+          ConnectivityBanner(),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.school,
+                    size: 100,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                );
-              },
-              child: const Text('Start Practice (Test)'),
+                  const SizedBox(height: 24),
+                  Text(
+                    'AI Tutor App',
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Under Development',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Setting up your personalized learning experience...',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Test navigation to QuestionScreen
+                      Navigator.pushNamed(
+                        context,
+                        '/question',
+                        arguments: QuestionScreenArguments(
+                          topicId: 'math_linear_equations', // Example topic ID
+                          difficulty: DifficultyLevel.beginner,
+                          questionCount: 5, // Shorter session for testing
+                        ),
+                      );
+                    },
+                    child: const Text('Start Practice (Test)'),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

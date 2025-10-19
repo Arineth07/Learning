@@ -1,3 +1,7 @@
+class ConnectivityFailure extends Failure {
+  const ConnectivityFailure(super.message, {super.cause, super.stackTrace});
+}
+
 /// Base class for all domain-specific failures.
 sealed class Failure {
   const Failure(this.message, {this.cause, this.stackTrace});

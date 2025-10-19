@@ -1,4 +1,5 @@
 export 'recommendation_models.dart';
+export 'connectivity_models.dart';
 // Enums
 export 'enums.dart';
 

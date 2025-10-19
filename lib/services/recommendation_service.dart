@@ -14,6 +14,7 @@ import '../utils/constants.dart';
 import 'package:uuid/uuid.dart';
 import '../utils/result.dart';
 import '../utils/failures.dart';
+import 'connectivity_service.dart';
 
 class RecommendationService extends ChangeNotifier {
   RecommendationService._internal();
@@ -24,6 +25,9 @@ class RecommendationService extends ChangeNotifier {
   AdaptiveLearningService? _adaptiveLearningService;
   KnowledgeGapService? _knowledgeGapService;
   ContentRepository? _contentRepository;
+  // Optional connectivity service for graceful degradation checks
+  // ignore: unused_field
+  ConnectivityService? _connectivityService;
   // These fields are injected for future use; keep to match setRepositories signature
   // ignore: unused_field
   UserProgressRepository? _userProgressRepository;
@@ -37,12 +41,14 @@ class RecommendationService extends ChangeNotifier {
     required AdaptiveLearningService adaptiveLearningService,
     required KnowledgeGapService knowledgeGapService,
     required ContentRepository contentRepository,
+    ConnectivityService? connectivityService,
     required UserProgressRepository userProgressRepository,
     required LearningSessionRepository learningSessionRepository,
   }) {
     _adaptiveLearningService = adaptiveLearningService;
     _knowledgeGapService = knowledgeGapService;
     _contentRepository = contentRepository;
+    _connectivityService = connectivityService;
     _userProgressRepository = userProgressRepository;
     _learningSessionRepository = learningSessionRepository;
     _isInitialized = true;
