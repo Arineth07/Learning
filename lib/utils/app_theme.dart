@@ -37,10 +37,10 @@ final ThemeData lightTheme = ThemeData(
   ),
 
   // Card theme for question cards and content containers
-  cardTheme: CardTheme(
+  cardTheme: CardThemeData(
     elevation: 2,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
   ),
 
   // Elevated button theme
@@ -95,10 +95,10 @@ final ThemeData darkTheme = ThemeData(
     titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
   ),
 
-  cardTheme: CardTheme(
+  cardTheme: CardThemeData(
     elevation: 2,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
   ),
 
   elevatedButtonTheme: ElevatedButtonThemeData(
