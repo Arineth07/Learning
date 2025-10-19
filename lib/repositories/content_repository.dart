@@ -197,9 +197,13 @@ class ContentRepositoryImpl implements ContentRepository {
         var isAvailable = true;
 
         // Check prerequisites
+        // Use a local repo reference after the null-check above to avoid
+        // repeated null-aware operators and to match the UserProgressRepository
+        // interface which exposes getByUserAndTopic(...).
+        final userProgressRepo = _userProgressRepository;
         for (final prerequisiteId in topic.prerequisiteTopicIds) {
-          final progressResult = await _userProgressRepository!
-              .getTopicProgress(userId, prerequisiteId)
+          final progressResult = await userProgressRepo
+              .getByUserAndTopic(userId, prerequisiteId)
               .timeout(QueryLimits.operationTimeout);
 
           final progress = progressResult.fold(
@@ -207,7 +211,7 @@ class ContentRepositoryImpl implements ContentRepository {
             (_) => null,
           );
 
-          if (progress == null || progress.masteryLevel < 0.8) {
+          if (progress == null || progress.averageScore < 0.8) {
             isAvailable = false;
             break;
           }
@@ -256,9 +260,10 @@ class ContentRepositoryImpl implements ContentRepository {
 
       // Check prerequisites if user progress is available
       if (_userProgressRepository != null) {
+        final userProgressRepo = _userProgressRepository;
         for (final prerequisiteId in nextTopic.prerequisiteTopicIds) {
-          final progressResult = await _userProgressRepository!
-              .getTopicProgress(userId, prerequisiteId)
+          final progressResult = await userProgressRepo
+              .getByUserAndTopic(userId, prerequisiteId)
               .timeout(QueryLimits.operationTimeout);
 
           final progress = progressResult.fold(
@@ -266,7 +271,7 @@ class ContentRepositoryImpl implements ContentRepository {
             (_) => null,
           );
 
-          if (progress == null || progress.masteryLevel < 0.8) {
+          if (progress == null || progress.averageScore < 0.8) {
             // Prerequisites not met
             return const Result.success(null);
           }
@@ -444,8 +449,9 @@ class ContentRepositoryImpl implements ContentRepository {
       }
 
       // Get user's performance for this topic
-      final performanceResult = await _userProgressRepository!
-          .getTopicProgress(userId, topicId)
+      final userProgressRepo = _userProgressRepository;
+      final performanceResult = await userProgressRepo
+          .getByUserAndTopic(userId, topicId)
           .timeout(QueryLimits.operationTimeout);
 
       final performance = performanceResult.fold(
@@ -459,7 +465,7 @@ class ContentRepositoryImpl implements ContentRepository {
       }
 
       // Filter out recently answered questions
-      final recentQuestions = performance.recentQuestionIds.toSet();
+      final recentQuestions = performance.completedQuestionIds.toSet();
       var availableQuestions = questions
           .where((q) => !recentQuestions.contains(q.id))
           .toList();

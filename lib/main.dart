@@ -115,10 +115,7 @@ class AITutorApp extends StatelessWidget {
         initialRoute: '/',
 
         // Named routes for navigation
-        routes: {
-          '/': (context) => const PlaceholderHomeScreen(),
-          '/question': (context) => const QuestionScreen(),
-        },
+        routes: {'/': (context) => const PlaceholderHomeScreen()},
 
         // Dynamic route handling for routes with parameters
         onGenerateRoute: (settings) {
@@ -132,10 +129,7 @@ class AITutorApp extends StatelessWidget {
             }
             return MaterialPageRoute(
               builder: (context) => const QuestionScreen(),
-              settings: RouteSettings(
-                name: '/question',
-                arguments: args,
-              ),
+              settings: RouteSettings(name: '/question', arguments: args),
             );
           }
           return null;
@@ -197,6 +191,22 @@ class PlaceholderHomeScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                // Test navigation to QuestionScreen
+                Navigator.pushNamed(
+                  context,
+                  '/question',
+                  arguments: QuestionScreenArguments(
+                    topicId: 'math_linear_equations', // Example topic ID
+                    difficulty: DifficultyLevel.beginner,
+                    questionCount: 5, // Shorter session for testing
+                  ),
+                );
+              },
+              child: const Text('Start Practice (Test)'),
             ),
           ],
         ),

@@ -42,11 +42,11 @@ class FeedbackBanner extends StatelessWidget {
                 child: Text(
                   isCorrect ? "Correct!" : "Incorrect",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isCorrect
-                            ? Colors.green.shade900
-                            : Colors.red.shade900,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: isCorrect
+                        ? Colors.green.shade900
+                        : Colors.red.shade900,
+                  ),
                 ),
               ),
               if (isCorrect && pointsEarned != null)
@@ -66,9 +66,8 @@ class FeedbackBanner extends StatelessWidget {
           Text(
             explanation,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color:
-                      isCorrect ? Colors.green.shade900 : Colors.red.shade900,
-                ),
+              color: isCorrect ? Colors.green.shade900 : Colors.red.shade900,
+            ),
           ),
         ],
       ),

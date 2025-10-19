@@ -5,7 +5,6 @@ import '../models/learning_session.dart';
 import '../models/question.dart';
 import '../repositories/content_repository.dart';
 import '../repositories/learning_session_repository.dart';
-import '../utils/result.dart';
 import '../widgets/widgets.dart';
 import 'question_screen_arguments.dart';
 
@@ -27,6 +26,7 @@ class _QuestionScreenState extends State<QuestionScreen> {
   DateTime? _questionStartTime;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isSubmitting = false;
 
   Question get _currentQuestion => _questions[_currentQuestionIndex];
   bool get _isLastQuestion => _currentQuestionIndex == _questions.length - 1;
@@ -51,9 +51,11 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   Future<void> _initializeSession() async {
     try {
-      final args = ModalRoute.of(context)!.settings.arguments
-          as QuestionScreenArguments?;
+      final args =
+          ModalRoute.of(context)!.settings.arguments
+              as QuestionScreenArguments?;
       if (args == null) {
+        if (!mounted) return;
         setState(() {
           _errorMessage = 'Invalid navigation: missing arguments';
           _isLoading = false;
@@ -64,44 +66,105 @@ class _QuestionScreenState extends State<QuestionScreen> {
       final contentRepository = context.read<ContentRepository>();
       final sessionRepository = context.read<LearningSessionRepository>();
 
-      // Check for existing session
-      if (args.sessionId != null) {
-        final existingSession =
-            await sessionRepository.getSessionById(args.sessionId!);
-        if (existingSession is Success<LearningSession>) {
-          _session = existingSession.value;
-        }
-      }
-
-      // Start new session if needed
-      if (_session == null) {
-        final sessionResult = await sessionRepository.startSession(
-          _userId,
-          [args.topicId],
-        );
-        if (sessionResult is Error) {
-          throw sessionResult.error;
-        }
-        _session = (sessionResult as Success<LearningSession>).value;
-      }
-
-      // Fetch questions
-      final questionsResult = await contentRepository.getRandomQuestions(
-        args.topicId,
-        count: args.questionCount,
-        difficulty: args.difficulty,
+      // Attempt to resume an active session for this user.
+      // Use getActiveSession(userId) to find any non-completed session.
+      final activeSessionResult = await sessionRepository.getActiveSession(
+        _userId,
       );
+      LearningSession? activeSession;
+      activeSessionResult.fold((s) => activeSession = s, (_) => null);
 
-      if (questionsResult is Error) {
-        throw questionsResult.error;
+      if (activeSession?.topicIds.contains(args.topicId) == true) {
+        // Resume only if the active session is for the same topic.
+        _session = activeSession;
+
+        // Reconstruct question list from persisted data where possible.
+        // We fetch all questions for the topic and then place answered questions
+        // (persisted in session.questionIds) at the front in the same order,
+        // followed by the remaining questions.
+        final allQuestionsResult = await contentRepository
+            .getQuestionsByTopicId(args.topicId);
+        final resumedQuestions = allQuestionsResult.fold<List<Question>?>(
+          (qs) => qs,
+          (f) {
+            if (!mounted) return null;
+            setState(() {
+              _errorMessage = 'Failed to load questions: ${f.message}';
+              _isLoading = false;
+            });
+            return null;
+          },
+        );
+        if (resumedQuestions == null) return;
+        _questions = resumedQuestions;
+
+        final answeredIds = _session!.questionIds;
+        final questionById = {for (var q in _questions) q.id: q};
+        final answeredQuestions = answeredIds
+            .map((id) => questionById[id])
+            .whereType<Question>()
+            .toList();
+        final remainingQuestions = _questions
+            .where((q) => !answeredIds.contains(q.id))
+            .toList();
+
+        _questions = [...answeredQuestions, ...remainingQuestions];
+        _currentQuestionIndex = answeredQuestions.length;
+      } else {
+        // Start new session if no suitable active session exists
+        final sessionResult = await sessionRepository.startSession(_userId, [
+          args.topicId,
+        ]);
+        final started = sessionResult.fold<LearningSession?>((s) => s, (f) {
+          if (!mounted) return null;
+          setState(() {
+            _errorMessage = 'Failed to start session: ${f.message}';
+            _isLoading = false;
+          });
+          return null;
+        });
+        if (started == null) return;
+        _session = started;
       }
-      _questions = (questionsResult as Success<List<Question>>).value;
 
+      // If we didn't resume (no questions loaded), fetch a fresh random set
+      if (_questions.isEmpty) {
+        final questionsResult = await contentRepository.getRandomQuestions(
+          args.topicId,
+          count: args.questionCount,
+          difficulty: args.difficulty,
+        );
+        final fetched = questionsResult.fold<List<Question>?>((qs) => qs, (f) {
+          if (!mounted) return null;
+          setState(() {
+            _errorMessage = 'Failed to load questions: ${f.message}';
+            _isLoading = false;
+          });
+          return null;
+        });
+        if (fetched == null) return;
+        _questions = fetched;
+      }
+
+      // Guard against empty question sets to avoid crashes (division by zero,
+      // attempting to read _currentQuestion, etc.). Surface a friendly message
+      // and provide retry/back actions via the existing error UI.
+      if (_questions.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No questions found for the selected topic.';
+        });
+        return;
+      }
+
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _questionStartTime = DateTime.now();
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to initialize session: $e';
         _isLoading = false;
@@ -115,38 +178,63 @@ class _QuestionScreenState extends State<QuestionScreen> {
   }
 
   Future<void> _onSubmitAnswer() async {
+    if (_isSubmitting) return; // prevent double submission
+
     if (_selectedAnswer == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select an answer')));
+      return;
+    }
+
+    // Defensive: ensure question start time is set before computing timeSpent.
+    if (_questionStartTime == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an answer')),
+        const SnackBar(
+          content: Text('Please wait a moment before submitting your answer.'),
+        ),
       );
       return;
     }
 
+    // Prevent concurrent submissions
+    setState(() {
+      _isSubmitting = true;
+    });
+
     try {
-      final timeSpent =
-          DateTime.now().difference(_questionStartTime!).inSeconds;
+      final timeSpent = DateTime.now()
+          .difference(_questionStartTime!)
+          .inSeconds;
       final isCorrect = _selectedAnswer == _currentQuestion.correctAnswer;
 
-      final result = await context.read<LearningSessionRepository>().addQuestionResult(
+      final result = await context
+          .read<LearningSessionRepository>()
+          .addQuestionResult(
             _session!.id,
             _currentQuestion.id,
             isCorrect,
             timeSpent,
           );
+      result.fold((s) => _session = s, (f) => throw f);
 
-      if (result is Error) {
-        throw result.error;
-      }
-      _session = (result as Success<LearningSession>).value;
-
+      if (!mounted) return;
       setState(() {
         _isAnswerSubmitted = true;
         _showFeedback = true;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit answer: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to submit answer: $e')));
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -159,7 +247,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _selectedAnswer = null;
         _isAnswerSubmitted = false;
         _showFeedback = false;
-        _questionStartTime = DateTime.now();
+        if (!mounted) return;
+        setState(() {
+          _isSubmitting = false;
+        });
       });
     }
   }
@@ -185,12 +276,13 @@ class _QuestionScreenState extends State<QuestionScreen> {
     if (_session == null || _session!.isCompleted) return;
 
     try {
-      final result = await context
-          .read<LearningSessionRepository>()
-          .endSession(_session!.id);
-      if (result is Success<LearningSession>) {
-        _session = result.value;
-      }
+      final result = await context.read<LearningSessionRepository>().endSession(
+        _session!.id,
+      );
+      result.fold(
+        (s) => _session = s,
+        (f) => debugPrint('Failed to end session: ${f.message}'),
+      );
     } catch (e) {
       debugPrint('Failed to end session: $e');
     }
@@ -313,14 +405,22 @@ class _QuestionScreenState extends State<QuestionScreen> {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isAnswerSubmitted ? _onNextQuestion : _onSubmitAnswer,
-              child: Text(
-                _isAnswerSubmitted
-                    ? _isLastQuestion
-                        ? 'Finish Session'
-                        : 'Next Question'
-                    : 'Submit Answer',
-              ),
+              onPressed: (_questionStartTime == null || _isSubmitting)
+                  ? null
+                  : (_isAnswerSubmitted ? _onNextQuestion : _onSubmitAnswer),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      _isAnswerSubmitted
+                          ? (_isLastQuestion
+                                ? 'Finish Session'
+                                : 'Next Question')
+                          : 'Submit Answer',
+                    ),
             ),
           ),
         ),

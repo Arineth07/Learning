@@ -16,7 +16,6 @@ class ContentService extends ChangeNotifier {
 
   // State
   bool _isInitialized = false;
-  DateTime? _lastLoadedAt;
 
   // Cache
   final Map<String, Subject> _subjects = {};
@@ -73,7 +72,6 @@ class ContentService extends ChangeNotifier {
       }
 
       _isInitialized = true;
-      _lastLoadedAt = DateTime.now();
       notifyListeners();
       return const Result.success(null);
     } on FlutterError catch (e, st) {
@@ -341,7 +339,6 @@ class ContentService extends ChangeNotifier {
     _topicsBySubject.clear();
     _questionsByTopic.clear();
     _isInitialized = false;
-    _lastLoadedAt = null;
     notifyListeners();
   }
 

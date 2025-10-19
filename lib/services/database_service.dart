@@ -48,7 +48,7 @@ class DatabaseService extends ChangeNotifier {
   Future<Box<T>> _openBoxWithRecovery<T>(String name) async {
     try {
       return await Hive.openBox<T>(name);
-    } on HiveError catch (e) {
+    } on HiveError {
       debugPrint('Attempting to recover corrupted box: $name');
       await Hive.deleteBoxFromDisk(name);
       try {

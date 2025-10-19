@@ -40,9 +40,9 @@ class OptionTile extends StatelessWidget {
             Expanded(
               child: Text(
                 option,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: _getTextColor(context),
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: _getTextColor(context)),
               ),
             ),
           ],

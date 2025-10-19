@@ -27,7 +27,10 @@ class ProgressIndicatorWidget extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: (currentQuestionIndex + 1) / totalQuestions,
+                    // Protect against division by zero when totalQuestions == 0
+                    value: totalQuestions == 0
+                        ? null
+                        : (currentQuestionIndex + 1) / totalQuestions,
                     backgroundColor: Colors.grey.shade300,
                     color: Theme.of(context).colorScheme.primary,
                     minHeight: 8,
@@ -36,11 +39,12 @@ class ProgressIndicatorWidget extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                "${currentQuestionIndex + 1}/$totalQuestions",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                totalQuestions == 0
+                    ? '0/0'
+                    : "${currentQuestionIndex + 1}/$totalQuestions",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -83,15 +87,11 @@ class ProgressIndicatorWidget extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
