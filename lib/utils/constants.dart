@@ -46,3 +46,94 @@ class ContentConstants {
   static const Duration contentCacheExpiry = Duration(hours: 24);
   static const bool enableContentValidation = true;
 }
+
+/// Constants for adaptive learning algorithms and thresholds.
+class AdaptiveLearningConstants {
+  // Difficulty adaptation thresholds
+  static const int consecutiveCorrectToIncrease = 3;
+  static const int consecutiveIncorrectToDecrease = 2;
+  static const double minimumAccuracyForIncrease = 0.75;
+
+  // Spaced repetition intervals (in days)
+  static const int spacedRepetitionInterval1 = 1; // First review
+  static const int spacedRepetitionInterval2 = 3; // Second review
+  static const int spacedRepetitionInterval3 = 7; // Third review
+  static const int spacedRepetitionInterval4 = 14; // Fourth review
+  static const int spacedRepetitionInterval5 = 30; // Fifth review
+
+  // Mastery thresholds for spaced repetition
+  static const double masteryLevelLow = 0.5; // Needs frequent review
+  static const double masteryLevelMedium = 0.7; // Moderate review
+  static const double masteryLevelHigh = 0.85; // Infrequent review
+
+  // Learning pace thresholds
+  static const double paceSlowThreshold = 1.5; // 1.5x expected time = slow
+  static const double paceFastThreshold = 0.7; // 0.7x expected time = fast
+
+  // Performance trend analysis
+  static const int trendAnalysisSessionCount = 5; // Last N sessions to analyze
+  static const double improvementThreshold = 0.1; // 10% improvement
+  static const double declineThreshold = 0.1; // 10% decline
+
+  // Session analysis limits
+  static const int recentSessionsLimit =
+      10; // Recent sessions for streak calculation
+  static const int minSessionsForTrend = 3; // Minimum sessions needed for trend
+}
+
+/// Constants for knowledge gap detection and management.
+class KnowledgeGapConstants {
+  // Consistency threshold for weakness indicator
+  static const double consistencyThreshold = 0.7;
+  // Composite gap detection threshold
+  static const double gapDetectionThreshold =
+      0.3; // Default threshold for composite score
+  // Gap Detection Thresholds
+  static const double accuracyThresholdCritical =
+      0.4; // Below 40% accuracy indicates critical gap
+  static const double accuracyThresholdHigh =
+      0.5; // Below 50% accuracy indicates high severity gap
+  static const double accuracyThresholdMedium =
+      0.6; // Below 60% accuracy indicates medium severity gap
+  static const double accuracyThresholdLow =
+      0.7; // Below 70% accuracy indicates low severity gap
+  static const double paceThresholdSlow =
+      1.5; // Taking 1.5x expected time indicates struggling
+  static const double paceThresholdVerySlow =
+      2.0; // Taking 2x expected time indicates severe struggling
+  static const int minimumAttemptsForDetection =
+      5; // Need at least 5 attempts to reliably detect gaps
+  static const int recentSessionsForAnalysis =
+      3; // Analyze last 3 sessions for gap detection
+
+  // Severity Scoring Weights
+  static const double accuracyWeight =
+      0.4; // 40% weight for accuracy in severity calculation
+  static const double paceWeight = 0.3; // 30% weight for learning pace
+  static const double consistencyWeight =
+      0.2; // 20% weight for performance consistency
+  static const double recencyWeight = 0.1; // 10% weight for recent performance
+
+  // Gap Resolution Criteria
+  static const double resolutionAccuracyThreshold =
+      0.8; // Need 80% accuracy to resolve gap
+  static const int resolutionMinimumAttempts =
+      5; // Need at least 5 correct attempts to confirm resolution
+  static const int resolutionConsecutiveCorrect =
+      3; // Need 3 consecutive correct answers
+
+  // Targeted Practice Configuration
+  static const int recommendedQuestionsPerGap =
+      10; // Recommend 10 questions per identified gap
+  static const int maxRecommendedQuestions =
+      15; // Maximum questions to recommend at once
+  static const bool includePrerequisites =
+      true; // Include prerequisite topics in recommendations
+  static const bool prioritizeFailedQuestions =
+      true; // Prioritize previously failed questions
+
+  // Gap Re-analysis Intervals
+  static const int reanalysisIntervalDays = 7; // Re-analyze gaps every 7 days
+  static const int autoResolveCheckDays =
+      3; // Check for auto-resolution every 3 days
+}

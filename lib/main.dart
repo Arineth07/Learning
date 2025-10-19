@@ -8,8 +8,10 @@ import 'utils/app_theme.dart';
 import 'screens/question_screen.dart';
 import 'screens/question_screen_arguments.dart';
 
+import 'services/adaptive_learning_service.dart';
 import 'services/database_service.dart';
 import 'services/content_service.dart';
+import 'services/knowledge_gap_service.dart';
 import 'repositories/repositories.dart';
 
 void main() async {
@@ -100,6 +102,54 @@ class AITutorApp extends StatelessWidget {
         >(
           update: (_, contentService, userProgress, __) =>
               ContentRepositoryImpl(contentService, userProgress),
+        ),
+
+        // Adaptive learning service with dependencies injected via ProxyProvider
+        ChangeNotifierProvider.value(value: AdaptiveLearningService.instance),
+        ProxyProvider4<
+          UserProgressRepository,
+          LearningSessionRepository,
+          PerformanceMetricsRepository,
+          ContentRepository,
+          AdaptiveLearningService
+        >(
+          update:
+              (
+                _,
+                userProgress,
+                learningSession,
+                performanceMetrics,
+                content,
+                previous,
+              ) {
+                final service = previous ?? AdaptiveLearningService.instance;
+                service.setRepositories(
+                  userProgressRepository: userProgress,
+                  learningSessionRepository: learningSession,
+                  performanceMetricsRepository: performanceMetrics,
+                  contentRepository: content,
+                );
+                return service;
+              },
+        ),
+        // Knowledge gap service
+        ChangeNotifierProvider.value(value: KnowledgeGapService.instance),
+        ProxyProvider3<
+          LearningSessionRepository,
+          ContentRepository,
+          KnowledgeGapRepository,
+          KnowledgeGapService
+        >(
+          update: (_, learningSession, content, knowledgeGap, previous) {
+            final knowledgeGapService =
+                previous ?? KnowledgeGapService.instance;
+            knowledgeGapService.setRepositories(
+              learningSessionRepository: learningSession,
+              contentRepository: content,
+              knowledgeGapRepository: knowledgeGap,
+            );
+            return knowledgeGapService;
+          },
         ),
       ],
       child: MaterialApp(

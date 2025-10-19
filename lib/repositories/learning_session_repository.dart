@@ -327,9 +327,16 @@ class LearningSessionRepositoryImpl implements LearningSessionRepository {
   ) async {
     try {
       final box = _databaseService.learningSessionBox;
-      final sessions = box.values
-          .where((s) => s.userId == userId && s.topicIds.contains(topicId))
-          .toList();
+      // Sessions are returned sorted by endTime (or startTime if null) descending (most recent first)
+      final sessions =
+          box.values
+              .where((s) => s.userId == userId && s.topicIds.contains(topicId))
+              .toList()
+            ..sort((a, b) {
+              final aTime = a.endTime ?? a.startTime;
+              final bTime = b.endTime ?? b.startTime;
+              return bTime.compareTo(aTime);
+            });
       return Result.success(sessions);
     } on HiveError catch (e, st) {
       return Result.error(
