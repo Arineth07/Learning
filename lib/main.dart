@@ -52,49 +52,47 @@ class AITutorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Since no services are implemented yet, return MaterialApp directly
-    return 
-      child: MaterialApp(
-        title: 'AI Tutor',
-        debugShowCheckedModeBanner: false,
-        
-        // Use theme configurations from app_theme.dart
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        themeMode: ThemeMode.system,
+    return MaterialApp(
+      title: 'AI Tutor',
+      debugShowCheckedModeBanner: false,
 
-        // Initial route
-        initialRoute: '/',
+      // Use theme configurations from app_theme.dart
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.system,
 
-        // Named routes for navigation
-        routes: {
-          '/': (context) => const PlaceholderHomeScreen(),
-          // TODO: Add routes as screens are created
-          // '/question': (context) => const QuestionScreen(),
-          // '/progress': (context) => const ProgressScreen(),
-          // '/settings': (context) => const SettingsScreen(),
-        },
+      // Initial route
+      initialRoute: '/',
 
-        // Dynamic route handling for routes with parameters
-        onGenerateRoute: (settings) {
-          // TODO: Implement dynamic route handling as needed
-          // Example:
-          // if (settings.name == '/question') {
-          //   final args = settings.arguments as Map<String, dynamic>;
-          //   return MaterialPageRoute(
-          //     builder: (context) => QuestionScreen(questionId: args['id']),
-          //   );
-          // }
-          return null;
-        },
+      // Named routes for navigation
+      routes: {
+        '/': (context) => const PlaceholderHomeScreen(),
+        // TODO: Add routes as screens are created
+        // '/question': (context) => const QuestionScreen(),
+        // '/progress': (context) => const ProgressScreen(),
+        // '/settings': (context) => const SettingsScreen(),
+      },
 
-        // Handle unknown routes
-        onUnknownRoute: (settings) {
-          return MaterialPageRoute(
-            builder: (context) => const PlaceholderHomeScreen(),
-          );
-        },
-      ),
-    )
+      // Dynamic route handling for routes with parameters
+      onGenerateRoute: (settings) {
+        // TODO: Implement dynamic route handling as needed
+        // Example:
+        // if (settings.name == '/question') {
+        //   final args = settings.arguments as Map<String, dynamic>;
+        //   return MaterialPageRoute(
+        //     builder: (context) => QuestionScreen(questionId: args['id']),
+        //   );
+        // }
+        return null;
+      },
+
+      // Handle unknown routes
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => const PlaceholderHomeScreen(),
+        );
+      },
+    );
   }
 }
 
