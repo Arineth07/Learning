@@ -1,3 +1,4 @@
+export 'recommendation_models.dart';
 // Enums
 export 'enums.dart';
 

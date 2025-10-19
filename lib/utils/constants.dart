@@ -1,3 +1,43 @@
+/// Recommendation engine configuration constants
+class RecommendationConstants {
+  // Scoring Weights
+  static const double urgencyWeight = 0.35;
+  static const double readinessWeight = 0.30;
+  static const double impactWeight = 0.20;
+  static const double engagementWeight = 0.15;
+
+  // Topic Recommendation Thresholds
+  static const double minimumMasteryForAdvancement = 0.7;
+  static const double prerequisiteCompletionThreshold = 0.8;
+  static const int maxRecommendedTopics = 5;
+  static const int minSessionsBeforeRecommendation = 2;
+
+  // Practice Set Configuration
+  static const int defaultPracticeSetSize = 10;
+  static const int minPracticeSetSize = 5;
+  static const int maxPracticeSetSize = 20;
+  static const double gapQuestionRatio = 0.6;
+  static const double reviewQuestionRatio = 0.3;
+  static const double newQuestionRatio = 0.1;
+
+  // Learning Path Configuration
+  static const int maxLearningPathLength = 10;
+  static const int pathRecalculationIntervalDays = 7;
+  static const bool allowSkipPrerequisites = false;
+  static const double balancedPathGapRatio = 0.4;
+  static const double balancedPathReviewRatio = 0.3;
+  static const double balancedPathNewRatio = 0.3;
+
+  // Question Selection Filters
+  static const int avoidRecentlyAnsweredDays = 1;
+  static const double prioritizeFailedQuestionsWeight = 2.0;
+  static const double diversityFactor = 0.3;
+
+  // Recommendation Refresh
+  static const Duration recommendationCacheDuration = Duration(minutes: 30);
+  static const bool forceRefreshOnNewSession = true;
+}
+
 /// Constants for database configuration and box names.
 class DatabaseConstants {
   // Box names for models

@@ -12,6 +12,7 @@ import 'services/adaptive_learning_service.dart';
 import 'services/database_service.dart';
 import 'services/content_service.dart';
 import 'services/knowledge_gap_service.dart';
+import 'services/recommendation_service.dart';
 import 'repositories/repositories.dart';
 
 void main() async {
@@ -150,6 +151,39 @@ class AITutorApp extends StatelessWidget {
             );
             return knowledgeGapService;
           },
+        ),
+
+        // Recommendation service
+        ChangeNotifierProvider.value(value: RecommendationService.instance),
+        ProxyProvider5<
+          AdaptiveLearningService,
+          KnowledgeGapService,
+          ContentRepository,
+          UserProgressRepository,
+          LearningSessionRepository,
+          RecommendationService
+        >(
+          update:
+              (
+                _,
+                adaptiveLearning,
+                knowledgeGap,
+                content,
+                userProgress,
+                learningSession,
+                previous,
+              ) {
+                final recommendationService =
+                    previous ?? RecommendationService.instance;
+                recommendationService.setRepositories(
+                  adaptiveLearningService: adaptiveLearning,
+                  knowledgeGapService: knowledgeGap,
+                  contentRepository: content,
+                  userProgressRepository: userProgress,
+                  learningSessionRepository: learningSession,
+                );
+                return recommendationService;
+              },
         ),
       ],
       child: MaterialApp(

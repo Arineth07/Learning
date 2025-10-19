@@ -45,6 +45,7 @@ dependencies:
   fl_chart: ^0.66.0  # Beautiful, customizable charts for progress visualization
   path_provider: ^2.1.2  # Access to commonly used file system locations for Hive storage
   json_annotation: ^4.8.1  # Annotations for JSON serialization
+  uuid: ^4.2.0
 
 dev_dependencies:
   flutter_test:

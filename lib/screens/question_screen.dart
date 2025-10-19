@@ -5,6 +5,7 @@ import '../models/learning_session.dart';
 import '../models/question.dart';
 import '../repositories/content_repository.dart';
 import '../repositories/learning_session_repository.dart';
+import '../services/recommendation_service.dart';
 import '../widgets/widgets.dart';
 import 'question_screen_arguments.dart';
 
@@ -127,23 +128,61 @@ class _QuestionScreenState extends State<QuestionScreen> {
         _session = started;
       }
 
-      // If we didn't resume (no questions loaded), fetch a fresh random set
+      // If we didn't resume (no questions loaded), try personalized set first
       if (_questions.isEmpty) {
-        final questionsResult = await contentRepository.getRandomQuestions(
-          args.topicId,
-          count: args.questionCount,
-          difficulty: args.difficulty,
-        );
-        final fetched = questionsResult.fold<List<Question>?>((qs) => qs, (f) {
-          if (!mounted) return null;
-          setState(() {
-            _errorMessage = 'Failed to load questions: ${f.message}';
-            _isLoading = false;
+        final recService = context.read<RecommendationService>();
+        if (args.usePersonalizedQuestions && recService.isInitialized) {
+          final pResult = await recService.getPersonalizedQuestions(
+            _userId,
+            args.topicId,
+            questionCount: args.questionCount,
+            difficulty: args.difficulty,
+          );
+          final set = pResult.fold<List<Question>?>(
+            (s) => s.questions,
+            (_) => null,
+          );
+          if (set != null && set.isNotEmpty) {
+            _questions = set;
+          } else {
+            // Fallback to random questions on failure or empty personalized set
+            final questionsResult = await contentRepository.getRandomQuestions(
+              args.topicId,
+              count: args.questionCount,
+              difficulty: args.difficulty,
+            );
+            final fetched = questionsResult.fold<List<Question>?>((qs) => qs, (
+              f,
+            ) {
+              if (!mounted) return null;
+              setState(() {
+                _errorMessage = 'Failed to load questions: ${f.message}';
+                _isLoading = false;
+              });
+              return null;
+            });
+            if (fetched == null) return;
+            _questions = fetched;
+          }
+        } else {
+          final questionsResult = await contentRepository.getRandomQuestions(
+            args.topicId,
+            count: args.questionCount,
+            difficulty: args.difficulty,
+          );
+          final fetched = questionsResult.fold<List<Question>?>((qs) => qs, (
+            f,
+          ) {
+            if (!mounted) return null;
+            setState(() {
+              _errorMessage = 'Failed to load questions: ${f.message}';
+              _isLoading = false;
+            });
+            return null;
           });
-          return null;
-        });
-        if (fetched == null) return;
-        _questions = fetched;
+          if (fetched == null) return;
+          _questions = fetched;
+        }
       }
 
       // Guard against empty question sets to avoid crashes (division by zero,
