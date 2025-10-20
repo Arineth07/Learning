@@ -7,30 +7,34 @@ part of 'adaptive_learning_models.dart';
 // **************************************************************************
 
 DifficultyRecommendation _$DifficultyRecommendationFromJson(
-        Map<String, dynamic> json) =>
-    DifficultyRecommendation(
-      currentDifficulty:
-          $enumDecode(_$DifficultyLevelEnumMap, json['currentDifficulty']),
-      recommendedDifficulty:
-          $enumDecode(_$DifficultyLevelEnumMap, json['recommendedDifficulty']),
-      reason: json['reason'] as String,
-      consecutiveCorrect: (json['consecutiveCorrect'] as num).toInt(),
-      consecutiveIncorrect: (json['consecutiveIncorrect'] as num).toInt(),
-      recentAccuracy: (json['recentAccuracy'] as num).toDouble(),
-      shouldAdjust: json['shouldAdjust'] as bool,
-    );
+  Map<String, dynamic> json,
+) => DifficultyRecommendation(
+  currentDifficulty: $enumDecode(
+    _$DifficultyLevelEnumMap,
+    json['currentDifficulty'],
+  ),
+  recommendedDifficulty: $enumDecode(
+    _$DifficultyLevelEnumMap,
+    json['recommendedDifficulty'],
+  ),
+  reason: json['reason'] as String,
+  consecutiveCorrect: (json['consecutiveCorrect'] as num).toInt(),
+  consecutiveIncorrect: (json['consecutiveIncorrect'] as num).toInt(),
+  recentAccuracy: (json['recentAccuracy'] as num).toDouble(),
+  shouldAdjust: json['shouldAdjust'] as bool,
+);
 
 Map<String, dynamic> _$DifficultyRecommendationToJson(
-        DifficultyRecommendation instance) =>
-    <String, dynamic>{
-      'currentDifficulty': instance.currentDifficulty,
-      'recommendedDifficulty': instance.recommendedDifficulty,
-      'reason': instance.reason,
-      'consecutiveCorrect': instance.consecutiveCorrect,
-      'consecutiveIncorrect': instance.consecutiveIncorrect,
-      'recentAccuracy': instance.recentAccuracy,
-      'shouldAdjust': instance.shouldAdjust,
-    };
+  DifficultyRecommendation instance,
+) => <String, dynamic>{
+  'currentDifficulty': instance.currentDifficulty,
+  'recommendedDifficulty': instance.recommendedDifficulty,
+  'reason': instance.reason,
+  'consecutiveCorrect': instance.consecutiveCorrect,
+  'consecutiveIncorrect': instance.consecutiveIncorrect,
+  'recentAccuracy': instance.recentAccuracy,
+  'shouldAdjust': instance.shouldAdjust,
+};
 
 const _$DifficultyLevelEnumMap = {
   DifficultyLevel.beginner: 'beginner',
@@ -53,44 +57,44 @@ TopicReviewSchedule _$TopicReviewScheduleFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$TopicReviewScheduleToJson(
-        TopicReviewSchedule instance) =>
-    <String, dynamic>{
-      'topicId': instance.topicId,
-      'topicName': instance.topicName,
-      'lastAttemptAt': instance.lastAttemptAt.toIso8601String(),
-      'nextReviewAt': instance.nextReviewAt.toIso8601String(),
-      'daysSinceLastAttempt': instance.daysSinceLastAttempt,
-      'daysUntilNextReview': instance.daysUntilNextReview,
-      'masteryScore': instance.masteryScore,
-      'priority': instance.priority,
-      'isOverdue': instance.isOverdue,
-    };
+  TopicReviewSchedule instance,
+) => <String, dynamic>{
+  'topicId': instance.topicId,
+  'topicName': instance.topicName,
+  'lastAttemptAt': instance.lastAttemptAt.toIso8601String(),
+  'nextReviewAt': instance.nextReviewAt.toIso8601String(),
+  'daysSinceLastAttempt': instance.daysSinceLastAttempt,
+  'daysUntilNextReview': instance.daysUntilNextReview,
+  'masteryScore': instance.masteryScore,
+  'priority': instance.priority,
+  'isOverdue': instance.isOverdue,
+};
 
 LearningPaceInsights _$LearningPaceInsightsFromJson(
-        Map<String, dynamic> json) =>
-    LearningPaceInsights(
-      topicId: json['topicId'] as String,
-      topicName: json['topicName'] as String,
-      averageResponseTime: (json['averageResponseTime'] as num).toDouble(),
-      expectedResponseTime: (json['expectedResponseTime'] as num).toDouble(),
-      paceRatio: (json['paceRatio'] as num).toDouble(),
-      paceCategory: json['paceCategory'] as String,
-      accuracy: (json['accuracy'] as num).toDouble(),
-      recommendation: json['recommendation'] as String,
-    );
+  Map<String, dynamic> json,
+) => LearningPaceInsights(
+  topicId: json['topicId'] as String,
+  topicName: json['topicName'] as String,
+  averageResponseTime: (json['averageResponseTime'] as num).toDouble(),
+  expectedResponseTime: (json['expectedResponseTime'] as num).toDouble(),
+  paceRatio: (json['paceRatio'] as num).toDouble(),
+  paceCategory: json['paceCategory'] as String,
+  accuracy: (json['accuracy'] as num).toDouble(),
+  recommendation: json['recommendation'] as String,
+);
 
 Map<String, dynamic> _$LearningPaceInsightsToJson(
-        LearningPaceInsights instance) =>
-    <String, dynamic>{
-      'topicId': instance.topicId,
-      'topicName': instance.topicName,
-      'averageResponseTime': instance.averageResponseTime,
-      'expectedResponseTime': instance.expectedResponseTime,
-      'paceRatio': instance.paceRatio,
-      'paceCategory': instance.paceCategory,
-      'accuracy': instance.accuracy,
-      'recommendation': instance.recommendation,
-    };
+  LearningPaceInsights instance,
+) => <String, dynamic>{
+  'topicId': instance.topicId,
+  'topicName': instance.topicName,
+  'averageResponseTime': instance.averageResponseTime,
+  'expectedResponseTime': instance.expectedResponseTime,
+  'paceRatio': instance.paceRatio,
+  'paceCategory': instance.paceCategory,
+  'accuracy': instance.accuracy,
+  'recommendation': instance.recommendation,
+};
 
 PerformanceTrend _$PerformanceTrendFromJson(Map<String, dynamic> json) =>
     PerformanceTrend(
@@ -114,8 +118,9 @@ Map<String, dynamic> _$PerformanceTrendToJson(PerformanceTrend instance) =>
       'userId': instance.userId,
       'subjectId': instance.subjectId,
       'accuracyHistory': instance.accuracyHistory,
-      'sessionDates':
-          instance.sessionDates.map((e) => e.toIso8601String()).toList(),
+      'sessionDates': instance.sessionDates
+          .map((e) => e.toIso8601String())
+          .toList(),
       'trendDirection': instance.trendDirection,
       'trendStrength': instance.trendStrength,
       'averageAccuracy': instance.averageAccuracy,

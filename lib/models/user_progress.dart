@@ -88,4 +88,24 @@ class UserProgress {
         ? DateTime.parse(json['updatedAt'] as String)
         : null,
   );
+
+  // Time after which a topic should be reviewed (30 days)
+  static const reviewIntervalDays = 30;
+
+  // Time after which a topic with low score should be reviewed (14 days)
+  static const lowScoreReviewIntervalDays = 14;
+
+  bool get needsReview {
+    final now = DateTime.now();
+    final daysSinceLastAttempt = now.difference(lastAttemptAt).inDays;
+
+    // If score is low, review more frequently
+    if (averageScore < 0.8 &&
+        daysSinceLastAttempt >= lowScoreReviewIntervalDays) {
+      return true;
+    }
+
+    // Regular review interval for well-understood topics
+    return daysSinceLastAttempt >= reviewIntervalDays;
+  }
 }

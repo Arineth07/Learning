@@ -55,6 +55,8 @@ class Topic {
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
+  List<String> get prerequisites => prerequisiteTopicIds;
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,

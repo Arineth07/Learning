@@ -97,6 +97,8 @@ class DatabaseConstants {
 class StorageKeys {
   static const String currentUserId = 'current_user_id';
   static const String lastSyncTimestamp = 'last_sync_timestamp';
+  // New key to store full SyncStatus JSON to avoid name collisions in prefs
+  static const String syncStatus = 'sync_status_json';
   static const String offlineMode = 'offline_mode';
   static const String encryptionEnabled = 'encryption_enabled';
 }
@@ -214,4 +216,99 @@ class KnowledgeGapConstants {
   static const int reanalysisIntervalDays = 7; // Re-analyze gaps every 7 days
   static const int autoResolveCheckDays =
       3; // Check for auto-resolution every 3 days
+}
+
+/// Constants and configuration for SyncService and API communication.
+class SyncConstants {
+  // API configuration
+  static const String baseUrl = 'https://api.aitutor.example.com';
+  static const String apiVersion = 'v1';
+  static const Duration apiTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 10);
+
+  // Endpoints (appended to /api/{version})
+  static const String syncProgressEndpoint = '/sync/progress';
+  static const String syncMetricsEndpoint = '/sync/metrics';
+  static const String syncGapsEndpoint = '/sync/gaps';
+  static const String syncSessionsEndpoint = '/sync/sessions';
+  static const String syncStatusEndpoint = '/sync/status';
+
+  // Batch sync configuration
+  static const int maxItemsPerBatch = 50;
+  static const bool enableBatchSync = true;
+  static const int batchSyncDelaySeconds = 2;
+
+  // Retry configuration
+  static const int maxSyncRetries = 3;
+  static const int retryBackoffMultiplier = 2;
+  static const int initialRetryDelaySeconds = 5;
+  static const int maxRetryDelaySeconds = 60;
+
+  // Conflict resolution
+  static const String conflictResolutionStrategy = 'last-write-wins';
+  static const String timestampField = 'updatedAt';
+  static const bool enableConflictLogging = true;
+
+  // Sync scheduling
+  static const int autoSyncIntervalMinutes = 15;
+  static const bool enableAutoSync = true;
+  static const bool syncOnAppResume = true;
+  static const bool syncOnSessionComplete = true;
+
+  // Data validation
+  static const bool validateBeforeSync = true;
+  static const bool skipInvalidItems = false;
+}
+
+// Cloud AI related constants and feature flags
+class CloudAIConstants {
+  // API endpoints
+  static const String recommendTopicEndpoint = '/ai/recommend-topic';
+  static const String recommendPracticeEndpoint = '/ai/recommend-practice';
+  static const String generatePathEndpoint = '/ai/generate-path';
+  static const String analyzePerformanceEndpoint = '/ai/analyze-performance';
+  static const String getInsightsEndpoint = '/ai/insights';
+
+  // Feature flags
+  static const bool enableCloudAI = true;
+  static const bool enableCloudTopicRecommendations = true;
+  static const bool enableCloudPracticeGeneration = true;
+  static const bool enableCloudPathGeneration = true;
+  static const bool enableCloudAnalytics = true;
+
+  // Fallback configuration
+  static const bool fallbackToRuleBasedOnError = true;
+  static const bool fallbackToRuleBasedOnTimeout = true;
+  static const Duration cloudAITimeout = Duration(seconds: 10);
+  static const int maxCloudAIRetries = 1;
+
+  // Caching configuration
+  static const bool enableCloudAICache = true;
+  static const Duration cacheDuration = Duration(minutes: 30);
+  static const String cacheKeyPrefix = 'cloud_ai_cache_';
+  static const int maxCacheSize = 50;
+  static const bool invalidateCacheOnNewSession = true;
+
+  // A/B testing configuration
+  static const bool enableABTesting = true;
+  static const List<String> abTestGroups = ['rule_based', 'cloud_ai', 'hybrid'];
+  static const String defaultABTestGroup = 'hybrid';
+  static const Map<String, double> abTestSplitRatio = {
+    'rule_based': 0.33,
+    'cloud_ai': 0.33,
+    'hybrid': 0.34,
+  };
+  static const bool trackABTestMetrics = true;
+  static const String abTestMetricsBox = 'ab_test_metrics';
+
+  // Request configuration
+  static const bool includePerformanceHistory = true;
+  static const int maxHistorySessionsToSend = 10;
+  static const bool includeKnowledgeGaps = true;
+  static const bool includeUserPreferences = false;
+
+  // Confidence thresholds
+  static const double minimumConfidenceScore = 0.6;
+  static const double highConfidenceThreshold = 0.85;
+  static const bool fallbackOnLowConfidence = true;
 }

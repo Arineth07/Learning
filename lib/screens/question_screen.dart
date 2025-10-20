@@ -8,8 +8,9 @@ import '../repositories/learning_session_repository.dart';
 import '../services/recommendation_service.dart';
 import '../widgets/widgets.dart';
 import '../services/connectivity_service.dart';
-import '../widgets/connectivity_banner.dart';
-import '../widgets/connectivity_indicator.dart';
+import '../services/sync_service.dart';
+import '../utils/constants.dart';
+import '../services/ab_test_service.dart';
 import 'question_screen_arguments.dart';
 
 class QuestionScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class QuestionScreen extends StatefulWidget {
 }
 
 class _QuestionScreenState extends State<QuestionScreen> {
-  String _userId = 'demo_user';
+  final String _userId = 'demo_user';
   LearningSession? _session;
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
@@ -207,7 +208,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('You are offline. Progress will be synced when connection is available.'),
+                content: Text(
+                  'You are offline. Progress will be synced when connection is available.',
+                ),
                 duration: Duration(seconds: 4),
               ),
             );
@@ -242,8 +245,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
     if (_selectedAnswer == null) {
       if (!mounted) return;
+      final scaffoldContext = context;
       ScaffoldMessenger.of(
-        context,
+        scaffoldContext,
       ).showSnackBar(const SnackBar(content: Text('Please select an answer')));
       return;
     }
@@ -251,7 +255,8 @@ class _QuestionScreenState extends State<QuestionScreen> {
     // Defensive: ensure question start time is set before computing timeSpent.
     if (_questionStartTime == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      final scaffoldContext = context;
+      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
         const SnackBar(
           content: Text('Please wait a moment before submitting your answer.'),
         ),
@@ -287,8 +292,9 @@ class _QuestionScreenState extends State<QuestionScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      final scaffoldContext = context;
       ScaffoldMessenger.of(
-        context,
+        scaffoldContext,
       ).showSnackBar(SnackBar(content: Text('Failed to submit answer: $e')));
     } finally {
       if (!mounted) return;
@@ -319,8 +325,10 @@ class _QuestionScreenState extends State<QuestionScreen> {
     await _endSession();
     if (!mounted) return;
 
+    if (!mounted) return;
+    final dialogContext = context;
     await showDialog(
-      context: context,
+      context: dialogContext,
       barrierDismissible: false,
       builder: (context) => SessionSummaryWidget(
         session: _session!,
@@ -350,6 +358,46 @@ class _QuestionScreenState extends State<QuestionScreen> {
           _session!.toJson(),
           priority: 4,
         );
+        // Invalidate Cloud AI cache for this user/topic (non-blocking).
+        // Use the session's topic id if available.
+        try {
+          final topicId = _session?.topicIds.isNotEmpty == true
+              ? _session?.topicIds.first
+              : null;
+          // Invalidate Cloud AI cache (non-blocking)
+          RecommendationService.instance.invalidateCache(
+            _userId,
+            topicId: topicId,
+          );
+          // Track session completion in AB metrics (non-blocking)
+          ABTestService.instance.trackSessionCompleted(
+            _userId,
+            _session!.accuracyRate,
+            _session!.totalTimeSpentMinutes,
+          );
+        } catch (_) {}
+        // If configured, attempt an immediate sync on session completion.
+        try {
+          final conn = context.read<ConnectivityService>();
+          final syncService = SyncService.instance;
+          if (conn.isOnline &&
+              SyncConstants.syncOnSessionComplete &&
+              syncService.isInitialized) {
+            // Fire-and-forget: do not await to avoid blocking UI; log outcome.
+            syncService
+                .forceSyncNow(_userId)
+                .then((res) {
+                  res.fold((_) => debugPrint('Immediate sync succeeded'), (f) {
+                    debugPrint('Immediate sync failed: ${f.message}');
+                  });
+                })
+                .catchError((e) {
+                  debugPrint('Immediate sync error: $e');
+                });
+          }
+        } catch (_) {
+          // ignore if connectivity or sync service not available
+        }
       } catch (_) {
         // ignore if connectivity service not available
       }
@@ -360,23 +408,26 @@ class _QuestionScreenState extends State<QuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: _session == null || _session!.isCompleted,
+      onPopInvokedWithResult: (bool didPop) async {
+        if (didPop) return;
         if (_session != null && !_session!.isCompleted) {
+          final navigationContext = context;
           final shouldPop = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
+            context: navigationContext,
+            builder: (dialogContext) => AlertDialog(
               title: const Text('Leave Session?'),
               content: const Text(
                 'Your progress will be saved, but the session will end. Continue?',
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () => Navigator.pop(dialogContext, false),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () => Navigator.pop(dialogContext, true),
                   child: const Text('Leave'),
                 ),
               ],
@@ -384,10 +435,11 @@ class _QuestionScreenState extends State<QuestionScreen> {
           );
           if (shouldPop == true) {
             await _endSession();
+            Navigator.of(navigationContext).pop();
           }
-          return shouldPop ?? false;
+        } else {
+          Navigator.of(context).pop();
         }
-        return true;
       },
       child: Scaffold(
         appBar: AppBar(
@@ -403,10 +455,14 @@ class _QuestionScreenState extends State<QuestionScreen> {
                   ),
                 ),
               ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ConnectivityIndicator(),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: CloudAIIndicator(compact: true),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ConnectivityIndicator(),
+            ),
           ],
         ),
         body: _buildBody(),

@@ -59,6 +59,7 @@ abstract interface class LearningSessionRepository {
   Future<Result<List<String>>> getTopSessions(String userId, {int limit = 5});
   Future<Result<Map<String, Duration>>> getStudyTimeByTopic(String userId);
   Future<Result<int>> getStudyStreak(String userId);
+  Future<Result<double>> getTopicCompletionRate(String userId, String topicId);
 }
 
 /// Concrete implementation of LearningSessionRepository using Hive
@@ -915,6 +916,57 @@ class LearningSessionRepositoryImpl implements LearningSessionRepository {
       return Result.error(
         UnknownFailure(
           'Unexpected error getting study streak',
+          cause: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<double>> getTopicCompletionRate(
+    String userId,
+    String topicId,
+  ) async {
+    try {
+      final box = _databaseService.learningSessionBox;
+      final sessions = box.values.where(
+        (s) => s.userId == userId && s.topicIds.contains(topicId),
+      );
+
+      if (sessions.isEmpty) {
+        return const Result.success(0.0);
+      }
+
+      // Calculate completion rate based on completed sessions and accuracy
+      final completedSessions = sessions.where(
+        (s) => s.isCompleted && s.accuracyRate > 0.7,
+      );
+      final completionRate = completedSessions.length / sessions.length;
+
+      // Weight by average accuracy
+      final avgAccuracy = completedSessions.isEmpty
+          ? 0.0
+          : completedSessions.fold<double>(
+                  0.0,
+                  (sum, s) => sum + s.accuracyRate,
+                ) /
+                completedSessions.length;
+
+      // Final rate is average of completion rate and accuracy
+      return Result.success((completionRate + avgAccuracy) / 2);
+    } on HiveError catch (e, st) {
+      return Result.error(
+        DatabaseFailure(
+          'Failed to get topic completion rate: ${e.message}',
+          cause: e,
+          stackTrace: st,
+        ),
+      );
+    } catch (e, st) {
+      return Result.error(
+        UnknownFailure(
+          'Unexpected error getting topic completion rate',
           cause: e,
           stackTrace: st,
         ),

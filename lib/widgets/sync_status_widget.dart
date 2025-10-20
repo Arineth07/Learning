@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/connectivity_service.dart';
+import '../services/sync_service.dart';
+// import '../models/sync_models.dart';
 // import '../models/connectivity_models.dart';
 
 class SyncStatusWidget extends StatelessWidget {
@@ -19,10 +21,14 @@ class SyncStatusWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ConnectivityService>(
-      builder: (context, connectivity, child) {
+    return Consumer2<ConnectivityService, SyncService>(
+      builder: (context, connectivity, syncService, child) {
         final queue = connectivity.queueState;
-        if (!queue.hasOperations() && !compact) return SizedBox.shrink();
+        final syncStatus = syncService.syncStatus;
+        if (!queue.hasOperations() &&
+            syncStatus.lastSyncedAt == null &&
+            !compact)
+          return SizedBox.shrink();
         return Card(
           margin: const EdgeInsets.all(12),
           child: Padding(
@@ -43,7 +49,7 @@ class SyncStatusWidget extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (queue.isProcessing) ...[
+                if (syncService.isSyncing || queue.isProcessing) ...[
                   Row(
                     children: [
                       SizedBox(
@@ -52,7 +58,7 @@ class SyncStatusWidget extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       const SizedBox(width: 8),
-                      Text('Syncing...'),
+                      Text('Syncing ${queue.processingCount} items...'),
                     ],
                   ),
                 ] else if (queue.pendingCount > 0) ...[
@@ -80,20 +86,68 @@ class SyncStatusWidget extends StatelessWidget {
                     ],
                   ),
                 ],
-                if (queue.lastProcessedAt != null) ...[
+                if (syncStatus.lastSyncedAt != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Last synced: ${formatTimestamp(queue.lastProcessedAt)}',
+                    'Last synced: ${formatTimestamp(syncStatus.lastSyncedAt)}',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                ] else if (queue.lastProcessedAt != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Last processed: ${formatTimestamp(queue.lastProcessedAt)}',
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                   ),
                 ],
+
+                if (syncStatus.lastError != null && !compact) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning, size: 16, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            syncStatus.lastError!,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.red.shade900),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (queue.failedCount > 0 && !compact) ...[
                   const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => connectivity.retryFailedOperations(),
-                    child: const Text('Retry Failed'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => connectivity.retryFailedOperations(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry Failed'),
+                      ),
+                      if (connectivity.isOnline)
+                        TextButton.icon(
+                          onPressed: () =>
+                              syncService.forceSyncNow('demo_user'),
+                          icon: const Icon(Icons.sync),
+                          label: const Text('Sync Now'),
+                        ),
+                    ],
                   ),
                 ],
               ],

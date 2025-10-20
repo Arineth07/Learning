@@ -15,9 +15,20 @@ import 'services/knowledge_gap_service.dart';
 import 'services/recommendation_service.dart';
 import 'repositories/repositories.dart';
 import 'services/connectivity_service.dart';
+import 'services/sync_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'services/cloud_ai_cache_service.dart';
+import 'services/ab_test_service.dart';
+import 'services/api_client.dart';
+import 'utils/constants.dart';
+import 'screens/sync_debug_screen.dart';
 import 'widgets/connectivity_indicator.dart';
 import 'widgets/connectivity_banner.dart';
 import 'widgets/sync_status_widget.dart';
+import 'widgets/widgets.dart';
+import 'screens/cloud_ai_debug_screen.dart';
+import 'screens/dashboard_screen.dart';
+// cloud AI models are exported via models/models.dart
 
 void main() async {
   // Ensure Flutter is initialized before async operations
@@ -28,10 +39,11 @@ void main() async {
     await Hive.initFlutter();
 
     // Register enum adapters
-    Hive.registerAdapter(DifficultyLevelAdapter());
-    Hive.registerAdapter(QuestionTypeAdapter());
-    Hive.registerAdapter(SubjectCategoryAdapter());
-    Hive.registerAdapter(GapSeverityAdapter());
+    // Enum adapters not needed - enums are serialized within model adapters
+    // Hive.registerAdapter(DifficultyLevelAdapter());
+    // Hive.registerAdapter(QuestionTypeAdapter());
+    // Hive.registerAdapter(SubjectCategoryAdapter());
+    // Hive.registerAdapter(GapSeverityAdapter());
 
     // Register model adapters
     Hive.registerAdapter(SubjectAdapter());
@@ -41,6 +53,10 @@ void main() async {
     Hive.registerAdapter(PerformanceMetricsAdapter());
     Hive.registerAdapter(KnowledgeGapAdapter());
     Hive.registerAdapter(LearningSessionAdapter());
+    // Register ABTestMetrics adapter (generated)
+    try {
+      Hive.registerAdapter(ABTestMetricsAdapter());
+    } catch (_) {}
 
     // Initialize DatabaseService
     final db = DatabaseService();
@@ -58,8 +74,40 @@ void main() async {
               final connInit = await connectivityService.initialize();
               connInit.fold(
                 (_) => debugPrint('Connectivity service initialized'),
-                (failure) => debugPrint('Warning: Connectivity failed to initialize: ${failure.message}'),
+                (failure) => debugPrint(
+                  'Warning: Connectivity failed to initialize: ${failure.message}',
+                ),
               );
+              // Initialize SyncService (non-critical)
+              try {
+                final syncService = SyncService.instance;
+                final syncInit = await syncService.initialize();
+                syncInit.fold(
+                  (_) => debugPrint('Sync service initialized'),
+                  (failure) => debugPrint(
+                    'Warning: Sync service failed to initialize: ${failure.message}',
+                  ),
+                );
+              } catch (e) {
+                debugPrint('Warning: Sync initialization threw: $e');
+              }
+              // Initialize Cloud AI cache and AB test services (non-critical)
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                final cacheService = CloudAICacheService.instance;
+                await cacheService.initialize(prefs);
+                await cacheService.cleanupExpiredCache();
+
+                final abBox = await Hive.openBox<ABTestMetrics>(
+                  CloudAIConstants.abTestMetricsBox,
+                );
+                final abTestService = ABTestService.instance;
+                await abTestService.initialize(prefs, abBox);
+              } catch (e) {
+                debugPrint(
+                  'Warning: Cloud AI services failed to initialize: $e',
+                );
+              }
             } catch (e) {
               debugPrint('Warning: Connectivity initialization threw: $e');
             }
@@ -196,15 +244,72 @@ class AITutorApp extends StatelessWidget {
               ) {
                 final recommendationService =
                     previous ?? RecommendationService.instance;
-                recommendationService.setRepositories(
-                  adaptiveLearningService: adaptiveLearning,
-                  knowledgeGapService: knowledgeGap,
-                  contentRepository: content,
-                  connectivityService: connectivity,
-                  userProgressRepository: userProgress,
-                  learningSessionRepository: learningSession,
-                );
+                // Inject cloud AI services and prefs if available
+                final prefsFut = SharedPreferences.getInstance();
+                prefsFut
+                    .then((prefs) {
+                      recommendationService.setRepositories(
+                        adaptiveLearningService: adaptiveLearning,
+                        knowledgeGapService: knowledgeGap,
+                        contentRepository: content,
+                        connectivityService: connectivity,
+                        userProgressRepository: userProgress,
+                        learningSessionRepository: learningSession,
+                        cacheService: CloudAICacheService.instance,
+                        abTestService: ABTestService.instance,
+                        apiClient: ApiClient.instance,
+                        prefs: prefs,
+                      );
+                    })
+                    .catchError((_) {
+                      recommendationService.setRepositories(
+                        adaptiveLearningService: adaptiveLearning,
+                        knowledgeGapService: knowledgeGap,
+                        contentRepository: content,
+                        connectivityService: connectivity,
+                        userProgressRepository: userProgress,
+                        learningSessionRepository: learningSession,
+                        cacheService: null,
+                        abTestService: null,
+                        apiClient: ApiClient.instance,
+                        prefs: null,
+                      );
+                    });
                 return recommendationService;
+              },
+        ),
+
+        // SyncService wiring: inject repositories and connectivity, then wire back to connectivity
+        ChangeNotifierProvider.value(value: SyncService.instance),
+        ProxyProvider5<
+          UserProgressRepository,
+          PerformanceMetricsRepository,
+          KnowledgeGapRepository,
+          LearningSessionRepository,
+          ConnectivityService,
+          SyncService
+        >(
+          update:
+              (
+                _,
+                userProgress,
+                performanceMetrics,
+                knowledgeGap,
+                learningSession,
+                connectivity,
+                previous,
+              ) {
+                final syncService = previous ?? SyncService.instance;
+                syncService.setRepositories(
+                  userProgressRepository: userProgress,
+                  performanceMetricsRepository: performanceMetrics,
+                  knowledgeGapRepository: knowledgeGap,
+                  learningSessionRepository: learningSession,
+                  connectivityService: connectivity,
+                );
+                // Wire back
+                connectivity.setSyncService(syncService);
+                return syncService;
               },
         ),
       ],
@@ -221,7 +326,13 @@ class AITutorApp extends StatelessWidget {
         initialRoute: '/',
 
         // Named routes for navigation
-        routes: {'/': (context) => const PlaceholderHomeScreen()},
+        routes: {
+          '/': (context) => const DashboardScreen(),
+          '/sync-debug': (context) => const SyncDebugScreen(),
+          '/cloud-ai-debug': (context) => const CloudAIDebugScreen(),
+          '/dashboard': (context) =>
+              const DashboardScreen(), // Additional route for testing
+        },
 
         // Dynamic route handling for routes with parameters
         onGenerateRoute: (settings) {
@@ -230,7 +341,7 @@ class AITutorApp extends StatelessWidget {
             if (args == null) {
               // Handle missing arguments - return error screen
               return MaterialPageRoute(
-                builder: (context) => const PlaceholderHomeScreen(),
+                builder: (context) => const DashboardScreen(),
               );
             }
             return MaterialPageRoute(
@@ -244,96 +355,9 @@ class AITutorApp extends StatelessWidget {
         // Handle unknown routes
         onUnknownRoute: (settings) {
           return MaterialPageRoute(
-            builder: (context) => const PlaceholderHomeScreen(),
+            builder: (context) => const DashboardScreen(),
           );
         },
-      ),
-    );
-  }
-}
-
-/// Placeholder home screen displayed during development
-/// This will be replaced by DashboardScreen in subsequent phases
-class PlaceholderHomeScreen extends StatelessWidget {
-  const PlaceholderHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI Tutor'),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        actions: [
-          // Compact sync status indicator
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: SyncStatusWidget(compact: true),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ConnectivityIndicator(),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          ConnectivityBanner(),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.school,
-                    size: 100,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'AI Tutor App',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Under Development',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      'Setting up your personalized learning experience...',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Test navigation to QuestionScreen
-                      Navigator.pushNamed(
-                        context,
-                        '/question',
-                        arguments: QuestionScreenArguments(
-                          topicId: 'math_linear_equations', // Example topic ID
-                          difficulty: DifficultyLevel.beginner,
-                          questionCount: 5, // Shorter session for testing
-                        ),
-                      );
-                    },
-                    child: const Text('Start Practice (Test)'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

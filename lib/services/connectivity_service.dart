@@ -9,6 +9,7 @@ import '../models/connectivity_models.dart';
 import '../utils/constants.dart';
 import '../utils/result.dart';
 import '../utils/failures.dart';
+import 'sync_service.dart';
 
 class ConnectivityService extends ChangeNotifier {
   static final ConnectivityService instance = ConnectivityService._internal();
@@ -24,6 +25,7 @@ class ConnectivityService extends ChangeNotifier {
   Timer? _periodicCheckTimer;
   bool _isInitialized = false;
   SharedPreferences? _prefs;
+  SyncService? _syncService;
   final _connectivityController =
       StreamController<ConnectivityState>.broadcast();
 
@@ -35,6 +37,11 @@ class ConnectivityService extends ChangeNotifier {
   SyncQueueState get queueState => _queueState;
   Stream<ConnectivityState> get connectivityStream =>
       _connectivityController.stream;
+
+  void setSyncService(SyncService syncService) {
+    _syncService = syncService;
+    notifyListeners();
+  }
 
   Future<Result<void>> initialize() async {
     if (_isInitialized) return Result.success(null);
@@ -162,14 +169,20 @@ class ConnectivityService extends ChangeNotifier {
               type: _currentState.type,
               hasInternet: hasInternet,
               lastChecked: DateTime.now(),
-              lastOnline: hasInternet ? DateTime.now() : _currentState.lastOnline,
+              lastOnline: hasInternet
+                  ? DateTime.now()
+                  : _currentState.lastOnline,
               offlineDuration: hasInternet
                   ? null
-                  : (DateTime.now().difference(_currentState.lastOnline ?? DateTime.now())),
+                  : (DateTime.now().difference(
+                      _currentState.lastOnline ?? DateTime.now(),
+                    )),
             );
             _connectivityController.add(_currentState);
             // If we just regained internet, process queue if configured
-            if (!prevOnline && hasInternet && ConnectivityConstants.autoProcessOnConnect) {
+            if (!prevOnline &&
+                hasInternet &&
+                ConnectivityConstants.autoProcessOnConnect) {
               await _processQueueOnReconnect();
             }
             notifyListeners();
@@ -216,8 +229,39 @@ class ConnectivityService extends ChangeNotifier {
       // FIFO for same priority
       return a.createdAt.compareTo(b.createdAt);
     });
-    for (final op in pending) {
+    // Process fresh pending operations first (attemptCount == 0) so retries
+    // with backoff don't starve the queue. Schedule retries with increasing
+    // delay based on attempt count.
+    final fresh = pending.where((op) => op.attemptCount == 0).toList();
+    final retryCandidates = pending.where((op) => op.attemptCount > 0).toList();
+
+    // Process fresh ops immediately (respecting priority ordering)
+    for (final op in fresh) {
       await _processSyncOperation(op);
+    }
+
+    // Schedule retries with exponential backoff so they don't block fresh ops
+    for (final op in retryCandidates) {
+      // compute exponential backoff delay: base * 2^(attemptCount - 1)
+      final base = ConnectivityConstants.retryDelaySeconds;
+      final exponent = (op.attemptCount - 1).clamp(0, 30);
+      final computed = base * (1 << exponent);
+      final delaySeconds = computed > ConnectivityConstants.maxRetryDelaySeconds
+          ? ConnectivityConstants.maxRetryDelaySeconds
+          : computed;
+
+      // Schedule processing after delay; do not await so other scheduled
+      // retries can run concurrently after their delays.
+      Future.delayed(Duration(seconds: delaySeconds), () async {
+        // Before retrying, ensure the op is still pending and we are online
+        final currentOp = _syncQueue.firstWhere(
+          (o) => o.id == op.id,
+          orElse: () => op,
+        );
+        if (currentOp.status == SyncOperationStatus.pending && isOnline) {
+          await _processSyncOperation(currentOp);
+        }
+      });
     }
     _updateQueueState();
     await _saveQueueToStorage();
@@ -225,7 +269,7 @@ class ConnectivityService extends ChangeNotifier {
   }
 
   Future<void> _processSyncOperation(SyncOperation op) async {
-    op = SyncOperation(
+    final processingOp = SyncOperation(
       id: op.id,
       type: op.type,
       data: op.data,
@@ -236,23 +280,63 @@ class ConnectivityService extends ChangeNotifier {
       errorMessage: null,
       priority: op.priority,
     );
-    // TODO: Integrate with SyncService in future
-    // For now, mark as completed
-    op = SyncOperation(
-      id: op.id,
-      type: op.type,
-      data: op.data,
-      createdAt: op.createdAt,
-      lastAttemptAt: DateTime.now(),
-      attemptCount: op.attemptCount,
-      status: SyncOperationStatus.completed,
-      errorMessage: null,
-      priority: op.priority,
-    );
-    // Remove completed from queue
-    _syncQueue.removeWhere((o) => o.id == op.id);
-    // Record the time of this successful sync
-    _lastProcessedAt = DateTime.now();
+
+    final index = _syncQueue.indexWhere((o) => o.id == op.id);
+    if (index != -1) {
+      _syncQueue[index] = processingOp;
+    }
+
+    if (_syncService != null && _syncService!.isInitialized) {
+      final result = await _syncService!.syncOperation(processingOp);
+      result.fold(
+        (syncResponse) {
+          // Success: remove from queue
+          _syncQueue.removeWhere((o) => o.id == op.id);
+          _lastProcessedAt = DateTime.now();
+        },
+        (failure) {
+          final failedOp = SyncOperation(
+            id: op.id,
+            type: op.type,
+            data: op.data,
+            createdAt: op.createdAt,
+            lastAttemptAt: DateTime.now(),
+            attemptCount: processingOp.attemptCount,
+            status: op.canRetry(ConnectivityConstants.maxRetryAttempts)
+                ? SyncOperationStatus.pending
+                : SyncOperationStatus.failed,
+            errorMessage: failure.message,
+            priority: op.priority,
+          );
+
+          final idx = _syncQueue.indexWhere((o) => o.id == op.id);
+          if (idx != -1) {
+            _syncQueue[idx] = failedOp;
+          }
+        },
+      );
+    } else {
+      // SyncService is not available. Keep the operation pending for retry later.
+      debugPrint(
+        'SyncService not available, leaving operation pending for retry',
+      );
+      final idx = _syncQueue.indexWhere((o) => o.id == op.id);
+      if (idx != -1) {
+        final pendingOp = SyncOperation(
+          id: op.id,
+          type: op.type,
+          data: op.data,
+          createdAt: op.createdAt,
+          lastAttemptAt: DateTime.now(),
+          attemptCount: op.attemptCount, // preserve attempt count
+          status: SyncOperationStatus.pending,
+          errorMessage: 'SyncService unavailable',
+          priority: op.priority,
+        );
+        _syncQueue[idx] = pendingOp;
+      }
+    }
+
     _updateQueueState();
     await _saveQueueToStorage();
   }
@@ -297,7 +381,8 @@ class ConnectivityService extends ChangeNotifier {
         )
         .toList();
     for (var op in failed) {
-      op = SyncOperation(
+      // convert to pending and schedule retry with backoff
+      final pendingOp = SyncOperation(
         id: op.id,
         type: op.type,
         data: op.data,
@@ -308,7 +393,26 @@ class ConnectivityService extends ChangeNotifier {
         errorMessage: null,
         priority: op.priority,
       );
-      await _processSyncOperation(op);
+      final idx = _syncQueue.indexWhere((o) => o.id == op.id);
+      if (idx != -1) _syncQueue[idx] = pendingOp;
+
+      // compute delay using exponential backoff
+      final base = ConnectivityConstants.retryDelaySeconds;
+      final exponent = (op.attemptCount - 1).clamp(0, 30);
+      final computed = base * (1 << exponent);
+      final delaySeconds = computed > ConnectivityConstants.maxRetryDelaySeconds
+          ? ConnectivityConstants.maxRetryDelaySeconds
+          : computed;
+
+      Future.delayed(Duration(seconds: delaySeconds), () async {
+        final currentOp = _syncQueue.firstWhere(
+          (o) => o.id == op.id,
+          orElse: () => pendingOp,
+        );
+        if (currentOp.status == SyncOperationStatus.pending && isOnline) {
+          await _processSyncOperation(currentOp);
+        }
+      });
     }
     _updateQueueState();
     await _saveQueueToStorage();

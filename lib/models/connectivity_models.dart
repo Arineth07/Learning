@@ -1,14 +1,14 @@
 // import 'dart:convert';
-import 'package:flutter/foundation.dart';
+// kept minimal: no flutter foundation imports needed after replacing describeEnum
 
 // --- Connectivity Status ---
 enum ConnectivityStatus { online, offline, checking }
 
 extension ConnectivityStatusX on ConnectivityStatus {
-  String toJson() => describeEnum(this);
+  String toJson() => name;
   static ConnectivityStatus fromJson(String value) =>
       ConnectivityStatus.values.firstWhere(
-        (e) => describeEnum(e) == value,
+        (e) => e.name == value,
         orElse: () => ConnectivityStatus.offline,
       );
   bool isConnected() => this == ConnectivityStatus.online;
@@ -18,10 +18,10 @@ extension ConnectivityStatusX on ConnectivityStatus {
 enum ConnectivityType { wifi, mobile, ethernet, bluetooth, vpn, none, unknown }
 
 extension ConnectivityTypeX on ConnectivityType {
-  String toJson() => describeEnum(this);
+  String toJson() => name;
   static ConnectivityType fromJson(String value) =>
       ConnectivityType.values.firstWhere(
-        (e) => describeEnum(e) == value,
+        (e) => e.name == value,
         orElse: () => ConnectivityType.unknown,
       );
   bool isMobile() =>
@@ -90,10 +90,10 @@ class ConnectivityState {
 enum SyncOperationStatus { pending, processing, completed, failed, cancelled }
 
 extension SyncOperationStatusX on SyncOperationStatus {
-  String toJson() => describeEnum(this);
+  String toJson() => name;
   static SyncOperationStatus fromJson(String value) =>
       SyncOperationStatus.values.firstWhere(
-        (e) => describeEnum(e) == value,
+        (e) => e.name == value,
         orElse: () => SyncOperationStatus.pending,
       );
   bool isTerminal() =>

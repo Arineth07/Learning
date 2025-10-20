@@ -2,6 +2,26 @@ class ConnectivityFailure extends Failure {
   const ConnectivityFailure(super.message, {super.cause, super.stackTrace});
 }
 
+/// Represents data conflicts during sync (HTTP 409)
+class ConflictFailure extends Failure {
+  const ConflictFailure(super.message, {super.cause, super.stackTrace});
+}
+
+/// Represents authentication/authorization failures (HTTP 401/403)
+class AuthenticationFailure extends Failure {
+  const AuthenticationFailure(super.message, {super.cause, super.stackTrace});
+}
+
+/// Represents server-side failures (HTTP 5xx)
+class ServerFailure extends Failure {
+  const ServerFailure(super.message, {super.cause, super.stackTrace});
+}
+
+/// Represents rate-limiting errors (HTTP 429)
+class RateLimitFailure extends Failure {
+  const RateLimitFailure(super.message, {super.cause, super.stackTrace});
+}
+
 /// Base class for all domain-specific failures.
 sealed class Failure {
   const Failure(this.message, {this.cause, this.stackTrace});
