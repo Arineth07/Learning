@@ -10,7 +10,6 @@ import '../widgets/widgets.dart';
 import '../services/connectivity_service.dart';
 import '../services/sync_service.dart';
 import '../utils/constants.dart';
-import '../services/ab_test_service.dart';
 import 'question_screen_arguments.dart';
 
 class QuestionScreen extends StatefulWidget {
@@ -347,59 +346,27 @@ class _QuestionScreenState extends State<QuestionScreen> {
       final result = await context.read<LearningSessionRepository>().endSession(
         _session!.id,
       );
-      result.fold(
-        (s) => _session = s,
-        (f) => debugPrint('Failed to end session: ${f.message}'),
-      );
-      // Queue session upload for later if offline or to guarantee delivery.
+      result.fold((s) => _session = s, (f) => throw f);
+
+      // Optionally trigger an immediate sync in the background
       try {
-        context.read<ConnectivityService>().addToSyncQueue(
-          'session',
-          _session!.toJson(),
-          priority: 4,
-        );
-        // Invalidate Cloud AI cache for this user/topic (non-blocking).
-        // Use the session's topic id if available.
-        try {
-          final topicId = _session?.topicIds.isNotEmpty == true
-              ? _session?.topicIds.first
-              : null;
-          // Invalidate Cloud AI cache (non-blocking)
-          RecommendationService.instance.invalidateCache(
-            _userId,
-            topicId: topicId,
-          );
-          // Track session completion in AB metrics (non-blocking)
-          ABTestService.instance.trackSessionCompleted(
-            _userId,
-            _session!.accuracyRate,
-            _session!.totalTimeSpentMinutes,
-          );
-        } catch (_) {}
-        // If configured, attempt an immediate sync on session completion.
-        try {
-          final conn = context.read<ConnectivityService>();
-          final syncService = SyncService.instance;
-          if (conn.isOnline &&
-              SyncConstants.syncOnSessionComplete &&
-              syncService.isInitialized) {
-            // Fire-and-forget: do not await to avoid blocking UI; log outcome.
-            syncService
-                .forceSyncNow(_userId)
-                .then((res) {
-                  res.fold((_) => debugPrint('Immediate sync succeeded'), (f) {
-                    debugPrint('Immediate sync failed: ${f.message}');
-                  });
-                })
-                .catchError((e) {
-                  debugPrint('Immediate sync error: $e');
+        final syncService = context.read<SyncService>();
+        if (SyncConstants.syncOnSessionComplete && syncService.isInitialized) {
+          // Fire-and-forget to avoid blocking UI
+          // ignore: discarded_futures
+          syncService
+              .forceSyncNow(_userId)
+              .then((res) {
+                res.fold((_) => debugPrint('Immediate sync succeeded'), (f) {
+                  debugPrint('Immediate sync failed: ${f.message}');
                 });
-          }
-        } catch (_) {
-          // ignore if connectivity or sync service not available
+              })
+              .catchError((e) {
+                debugPrint('Immediate sync error: $e');
+              });
         }
       } catch (_) {
-        // ignore if connectivity service not available
+        // ignore if sync service not available
       }
     } catch (e) {
       debugPrint('Failed to end session: $e');
@@ -410,11 +377,11 @@ class _QuestionScreenState extends State<QuestionScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: _session == null || _session!.isCompleted,
-      onPopInvokedWithResult: (bool didPop) async {
+      onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop) return;
         if (_session != null && !_session!.isCompleted) {
           final navigationContext = context;
-          final shouldPop = await showDialog<bool>(
+          showDialog<bool>(
             context: navigationContext,
             builder: (dialogContext) => AlertDialog(
               title: const Text('Leave Session?'),
@@ -432,11 +399,14 @@ class _QuestionScreenState extends State<QuestionScreen> {
                 ),
               ],
             ),
-          );
-          if (shouldPop == true) {
-            await _endSession();
-            Navigator.of(navigationContext).pop();
-          }
+          ).then((shouldPop) {
+            if (shouldPop == true) {
+              // ignore: discarded_futures
+              _endSession().then((_) {
+                Navigator.of(navigationContext).pop();
+              });
+            }
+          });
         } else {
           Navigator.of(context).pop();
         }
@@ -455,12 +425,12 @@ class _QuestionScreenState extends State<QuestionScreen> {
                   ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.0),
               child: CloudAIIndicator(compact: true),
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
+            const Padding(
+              padding: EdgeInsets.only(right: 8.0),
               child: ConnectivityIndicator(),
             ),
           ],

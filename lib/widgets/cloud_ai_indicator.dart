@@ -46,7 +46,7 @@ class _CloudAIIndicatorState extends State<CloudAIIndicator> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: color.withOpacity(0.6)),
+            border: Border.all(color: color.withValues(alpha: 0.6)),
           ),
           child: Text(text, style: TextStyle(fontSize: 12, color: color)),
         ),

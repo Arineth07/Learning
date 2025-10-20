@@ -22,10 +22,6 @@ import 'services/ab_test_service.dart';
 import 'services/api_client.dart';
 import 'utils/constants.dart';
 import 'screens/sync_debug_screen.dart';
-import 'widgets/connectivity_indicator.dart';
-import 'widgets/connectivity_banner.dart';
-import 'widgets/sync_status_widget.dart';
-import 'widgets/widgets.dart';
 import 'screens/cloud_ai_debug_screen.dart';
 import 'screens/dashboard_screen.dart';
 // cloud AI models are exported via models/models.dart
@@ -38,12 +34,11 @@ void main() async {
     // Initialize Hive for local database storage
     await Hive.initFlutter();
 
-    // Register enum adapters
-    // Enum adapters not needed - enums are serialized within model adapters
-    // Hive.registerAdapter(DifficultyLevelAdapter());
-    // Hive.registerAdapter(QuestionTypeAdapter());
-    // Hive.registerAdapter(SubjectCategoryAdapter());
-    // Hive.registerAdapter(GapSeverityAdapter());
+    // Register enum adapters first - these must be registered before model adapters
+    Hive.registerAdapter(DifficultyLevelAdapter());
+    Hive.registerAdapter(QuestionTypeAdapter());
+    Hive.registerAdapter(SubjectCategoryAdapter());
+    Hive.registerAdapter(GapSeverityAdapter());
 
     // Register model adapters
     Hive.registerAdapter(SubjectAdapter());

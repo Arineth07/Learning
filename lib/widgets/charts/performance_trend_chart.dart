@@ -141,7 +141,7 @@ class _PerformanceTrendChartState extends State<PerformanceTrendChart> {
                                     dotData: const FlDotData(show: true),
                                     belowBarData: BarAreaData(
                                       show: true,
-                                      color: trendColor.withOpacity(0.1),
+                                      color: trendColor.withValues(alpha: 0.1),
                                     ),
                                   ),
                                 ],
@@ -179,7 +179,6 @@ class _PerformanceTrendChartState extends State<PerformanceTrendChart> {
                                 maxY: 1,
                                 lineTouchData: LineTouchData(
                                   touchTooltipData: LineTouchTooltipData(
-                                    tooltipBgColor: Colors.blueGrey.shade900,
                                     getTooltipItems: (spots) {
                                       return spots.map((spot) {
                                         return LineTooltipItem(

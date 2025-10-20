@@ -145,8 +145,7 @@ class _KnowledgeGapsChartState extends State<KnowledgeGapsChart> {
                               maxY: maxY,
                               barTouchData: BarTouchData(
                                 enabled: true,
-                                touchTooltipData: BarTouchTooltipData(
-                                  tooltipBgColor: Colors.blueGrey.shade900,
+                                  touchTooltipData: BarTouchTooltipData(
                                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                     return BarTooltipItem(
                                       '${displayEntries[group.x.toInt()].key}\n${rod.toY.toInt()} gaps',

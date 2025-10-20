@@ -132,7 +132,6 @@ class LearningPaceChart extends StatelessWidget {
                                 barTouchData: BarTouchData(
                                   enabled: true,
                                   touchTooltipData: BarTouchTooltipData(
-                                    tooltipBgColor: Colors.blueGrey.shade900,
                                     getTooltipItem:
                                         (group, groupIndex, rod, rodIndex) {
                                           final idx = group.x.toInt();

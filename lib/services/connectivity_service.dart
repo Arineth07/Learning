@@ -17,7 +17,7 @@ class ConnectivityService extends ChangeNotifier {
   ConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   ConnectivityState _currentState = ConnectivityState.initial();
   List<SyncOperation> _syncQueue = [];
   SyncQueueState _queueState = SyncQueueState.empty();
@@ -62,9 +62,8 @@ class ConnectivityService extends ChangeNotifier {
         offlineDuration: hasInternet ? null : Duration.zero,
       );
       _connectivityController.add(_currentState);
-      _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-        (result) => _onConnectivityChanged([result]),
-      );
+      _connectivitySubscription =
+          _connectivity.onConnectivityChanged.listen(_onConnectivityChanged);
       if (ConnectivityConstants.enablePeriodicChecks) {
         _startPeriodicChecks();
       }

@@ -1,143 +1,182 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../repositories/user_progress_repository.dart';
+import '../repositories/learning_session_repository.dart';
 import '../models/models.dart';
 import '../utils/result.dart';
 
 class WelcomeCard extends StatelessWidget {
   final String userId;
-        child: FutureBuilder<List<dynamic>>(
-          future: Future.wait([
-            LearningSessionRepository.getTotalSessionCount(userId),
-            LearningSessionRepository.getAverageAccuracy(userId),
-            LearningSessionRepository.getTotalStudyTimeMinutes(userId),
-          ]),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-            }
-            if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            }
-            final totalSessions = snapshot.data?[0] ?? 0;
-            final avgAccuracy = snapshot.data?[1] ?? 0.0;
-            final studyMinutes = snapshot.data?[2] ?? 0;
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Welcome back, $userName!', style: Theme.of(context).textTheme.headline6),
-                    const SizedBox(height: 8),
-                    Text('Total Sessions: $totalSessions'),
-                    Text('Average Accuracy: ${avgAccuracy.toStringAsFixed(1)}%'),
-                    Text('Total Study Time: $studyMinutes min'),
-                    const SizedBox(height: 8),
-                    Text('Keep up the great work!'),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-                    ],
+
+  const WelcomeCard({
+    required this.userId,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        child: Consumer<LearningSessionRepository>(
+          builder: (context, sessionRepo, _) {
+            return FutureBuilder<List<dynamic>>(
+              future: Future.wait([
+                sessionRepo.getTotalSessionCount(userId),
+                sessionRepo.getAverageAccuracy(userId),
+                sessionRepo.getTotalStudyTimeMinutes(userId),
+              ]),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: CircularProgressIndicator(),
+                    ),
                   );
                 }
 
-                final result = snapshot.data;
-                if (result == null) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getGreeting(),
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Welcome to AI Tutor! Ready to start learning?',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Error loading statistics',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error.toString(),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
                   );
                 }
 
-                return result.fold(
-                  (progressList) {
-                    // Get the most recent progress or create a default one
-                    UserProgress? latestProgress;
-                    if (progressList.isNotEmpty) {
-                      // Sort by lastAttemptAt to get the most recent
-                      progressList.sort((a, b) => b.lastAttemptAt.compareTo(a.lastAttemptAt));
-                      latestProgress = progressList.first;
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                if (!snapshot.hasData) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           _getGreeting(),
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
-                        const SizedBox(height: 16),
-                        if (latestProgress != null) ...[
-                          Text(
-                            'Last session: ${_formatDate(latestProgress.lastAttemptAt)}',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _getMotivationalMessage(latestProgress),
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          if (latestProgress.totalAttempts > 0) ...[
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.local_fire_department,
-                                  color: Colors.orange,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Accuracy: ${(latestProgress.correctAttempts / latestProgress.totalAttempts * 100).toStringAsFixed(1)}%',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(color: Colors.orange),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ] else ...[
-                          Text(
-                            'Welcome to AI Tutor! Ready to start learning?',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'Ready to start your learning journey?',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
                       ],
-                    );
-                  },
-                  (error) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getGreeting(),
-                        style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  );
+                }
+
+                final results = snapshot.data!;
+                final totalSessionsResult = results[0] as Result<int>;
+                final avgAccuracyResult = results[1] as Result<double>;
+                final studyMinutesResult = results[2] as Result<int>;
+
+                return totalSessionsResult.fold(
+                  (totalSessions) => avgAccuracyResult.fold(
+                    (avgAccuracy) => studyMinutesResult.fold(
+                      (studyMinutes) => _buildStatsCard(
+                        context,
+                        totalSessions,
+                        avgAccuracy,
+                        studyMinutes,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error: ${error.message}',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(color: Colors.red),
-                      ),
-                    ],
+                      (failure) => _buildErrorCard(context, failure.message),
+                    ),
+                    (failure) => _buildErrorCard(context, failure.message),
                   ),
+                  (failure) => _buildErrorCard(context, failure.message),
                 );
               },
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(BuildContext context, String message) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Something went wrong',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(
+    BuildContext context,
+    int totalSessions,
+    double avgAccuracy,
+    int studyMinutes,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _getGreeting(),
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                'Total Sessions: $totalSessions',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(
+                Icons.local_fire_department,
+                color: Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Average Accuracy: ${(avgAccuracy * 100).toStringAsFixed(1)}%',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Total Study Time: $studyMinutes minutes',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            totalSessions > 0
+                ? 'Keep up the great work!'
+                : 'Ready to start your learning journey?',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -153,6 +192,7 @@ class WelcomeCard extends StatelessWidget {
     }
   }
 
+  // ignore: unused_element
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -168,6 +208,7 @@ class WelcomeCard extends StatelessWidget {
     }
   }
 
+  // ignore: unused_element
   String _getMotivationalMessage(UserProgress progress) {
     if (progress.totalAttempts == 0) {
       return 'Welcome! Let\'s start your learning journey.';
