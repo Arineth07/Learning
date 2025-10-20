@@ -5,6 +5,8 @@ import '../services/connectivity_service.dart';
 import '../utils/constants.dart';
 
 class ConnectivityBanner extends StatefulWidget {
+  const ConnectivityBanner({super.key});
+
   @override
   State<ConnectivityBanner> createState() => _ConnectivityBannerState();
 }
@@ -18,7 +20,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
     super.initState();
     if (ConnectivityConstants.bannerAutoDismissSeconds > 0) {
       _autoDismissTimer = Timer(
-        Duration(seconds: ConnectivityConstants.bannerAutoDismissSeconds),
+        const Duration(seconds: ConnectivityConstants.bannerAutoDismissSeconds),
         () {
           if (mounted) setState(() => _isDismissed = true);
         },
@@ -39,7 +41,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner> {
         if (_isDismissed ||
             connectivity.isOnline ||
             !ConnectivityConstants.showBannerOnOffline) {
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         }
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),

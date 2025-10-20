@@ -115,17 +115,15 @@ class ABTestService {
     final userId = _prefs?.getString('current_user_id') ?? '';
     if (userId.isEmpty) return;
     var metrics = _metricsBox?.get(userId);
-    if (metrics == null) {
-      metrics = ABTestMetrics(
+    metrics ??= ABTestMetrics(
         userId: userId,
         group: getCurrentGroup().toJson(),
         assignedAt: DateTime.now().toUtc(),
       );
-    }
     // update per-source counters in customMetrics
     try {
       final keyTotal = '${method}_used_total';
-      final keySource = '${method}_used_${source}';
+      final keySource = '${method}_used_$source';
       final currentTotal = (metrics.customMetrics[keyTotal] as int?) ?? 0;
       final currentSource = (metrics.customMetrics[keySource] as int?) ?? 0;
       metrics.customMetrics[keyTotal] = currentTotal + 1;
@@ -159,13 +157,11 @@ class ABTestService {
   ) async {
     _checkInitialized();
     var metrics = _metricsBox?.get(userId);
-    if (metrics == null) {
-      metrics = ABTestMetrics(
+    metrics ??= ABTestMetrics(
         userId: userId,
         group: getCurrentGroup().toJson(),
         assignedAt: DateTime.now().toUtc(),
       );
-    }
     final prevCount = metrics.sessionsCompleted;
     metrics.sessionsCompleted = prevCount + 1;
     metrics.averageAccuracy = _calculateRunningAverage(
@@ -184,13 +180,11 @@ class ABTestService {
   Future<void> trackKnowledgeGapResolved(String userId) async {
     _checkInitialized();
     var metrics = _metricsBox?.get(userId);
-    if (metrics == null) {
-      metrics = ABTestMetrics(
+    metrics ??= ABTestMetrics(
         userId: userId,
         group: getCurrentGroup().toJson(),
         assignedAt: DateTime.now().toUtc(),
       );
-    }
     metrics.knowledgeGapsResolved += 1;
     await _metricsBox?.put(userId, metrics);
   }
@@ -198,13 +192,11 @@ class ABTestService {
   Future<void> trackMasteryGain(String userId, double masteryGain) async {
     _checkInitialized();
     var metrics = _metricsBox?.get(userId);
-    if (metrics == null) {
-      metrics = ABTestMetrics(
+    metrics ??= ABTestMetrics(
         userId: userId,
         group: getCurrentGroup().toJson(),
         assignedAt: DateTime.now().toUtc(),
       );
-    }
     metrics.masteryGainRate = _calculateRunningAverage(
       metrics.masteryGainRate,
       masteryGain,

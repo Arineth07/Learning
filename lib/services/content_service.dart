@@ -193,7 +193,7 @@ class ContentService extends ChangeNotifier {
     final allIds = {..._subjects.keys, ..._topics.keys, ..._questions.keys};
     if (allIds.length !=
         _subjects.length + _topics.length + _questions.length) {
-      throw ValidationFailure('Duplicate IDs found in content');
+      throw const ValidationFailure('Duplicate IDs found in content');
     }
   }
 
@@ -278,7 +278,7 @@ class ContentService extends ChangeNotifier {
 
   void _checkCircularPrerequisites(String topicId, Set<String> visited) {
     if (visited.contains(topicId)) {
-      throw ValidationFailure('Circular prerequisite dependency detected');
+      throw const ValidationFailure('Circular prerequisite dependency detected');
     }
 
     visited.add(topicId);

@@ -30,7 +30,7 @@ class SyncService extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isSyncing = false;
   SyncStatus _syncStatus = SyncStatus.initial();
-  List<SyncConflict> _recentConflicts = [];
+  final List<SyncConflict> _recentConflicts = [];
   Timer? _autoSyncTimer;
 
   bool get isInitialized => _isInitialized;
@@ -54,7 +54,7 @@ class SyncService extends ChangeNotifier {
   }
 
   Future<Result<void>> initialize() async {
-    if (_isInitialized) return Result.success(null);
+    if (_isInitialized) return const Result.success(null);
     try {
       _prefs = await SharedPreferences.getInstance();
       await _loadSyncStatus();
@@ -77,7 +77,7 @@ class SyncService extends ChangeNotifier {
       if (SyncConstants.enableAutoSync) _startAutoSync();
       _isInitialized = true;
       notifyListeners();
-      return Result.success(null);
+      return const Result.success(null);
     } catch (e, st) {
       return Result.error(
         UnknownFailure(
@@ -92,7 +92,7 @@ class SyncService extends ChangeNotifier {
   /// Update the current user id used by the SyncService and persist it.
   Future<Result<void>> setCurrentUser(String userId) async {
     try {
-      if (_prefs == null) _prefs = await SharedPreferences.getInstance();
+      _prefs ??= await SharedPreferences.getInstance();
       await _prefs!.setString(StorageKeys.currentUserId, userId);
       _syncStatus = SyncStatus(
         userId: userId,
@@ -105,7 +105,7 @@ class SyncService extends ChangeNotifier {
       );
       _saveSyncStatus();
       notifyListeners();
-      return Result.success(null);
+      return const Result.success(null);
     } catch (e, st) {
       return Result.error(
         UnknownFailure(
@@ -119,7 +119,7 @@ class SyncService extends ChangeNotifier {
 
   Future<Result<SyncResponse>> syncOperation(SyncOperation operation) async {
     if (_connectivityService == null || !_connectivityService!.isOnline) {
-      return Result.error(ConnectivityFailure('Offline'));
+      return const Result.error(ConnectivityFailure('Offline'));
     }
     try {
       switch (operation.type) {
@@ -145,7 +145,7 @@ class SyncService extends ChangeNotifier {
 
   Future<Result<void>> syncAll(String userId) async {
     if (_connectivityService == null || !_connectivityService!.isOnline) {
-      return Result.error(ConnectivityFailure('Cannot sync while offline'));
+      return const Result.error(ConnectivityFailure('Cannot sync while offline'));
     }
     _isSyncing = true;
     _syncStatus = SyncStatus(userId: userId, isSyncing: true);
@@ -154,7 +154,7 @@ class SyncService extends ChangeNotifier {
       // Progress
       final progressRes =
           await _userProgressRepository?.getByUserId(userId) ??
-          Result.success(<UserProgress>[]);
+          const Result.success(<UserProgress>[]);
       final progressList = progressRes.fold<List<UserProgress>?>(
         (list) => list,
         (failure) {
@@ -170,7 +170,7 @@ class SyncService extends ChangeNotifier {
       // Metrics
       final metricsRes =
           await _performanceMetricsRepository?.getByUserId(userId) ??
-          Result.success(<PerformanceMetrics>[]);
+          const Result.success(<PerformanceMetrics>[]);
       final metricsList = metricsRes.fold<List<PerformanceMetrics>?>(
         (list) => list,
         (failure) {
@@ -186,7 +186,7 @@ class SyncService extends ChangeNotifier {
       // Gaps
       final gapsRes =
           await _knowledgeGapRepository?.getByUserId(userId) ??
-          Result.success(<KnowledgeGap>[]);
+          const Result.success(<KnowledgeGap>[]);
       final gapsList = gapsRes.fold<List<KnowledgeGap>?>((list) => list, (
         failure,
       ) {
@@ -201,7 +201,7 @@ class SyncService extends ChangeNotifier {
       // Sessions
       final sessionsRes =
           await _learningSessionRepository?.getByUserId(userId) ??
-          Result.success(<LearningSession>[]);
+          const Result.success(<LearningSession>[]);
       final sessionsList = sessionsRes.fold<List<LearningSession>?>(
         (list) => list,
         (failure) {
@@ -217,7 +217,7 @@ class SyncService extends ChangeNotifier {
       _updateSyncStatus('all', success: true);
       _isSyncing = false;
       notifyListeners();
-      return Result.success(null);
+      return const Result.success(null);
     } catch (e, st) {
       _isSyncing = false;
       _updateSyncStatus('all', success: false, error: e.toString());
@@ -346,7 +346,7 @@ class SyncService extends ChangeNotifier {
     try {
       final id = (localData['id'] ?? localData['entityId'])?.toString();
       if (id == null || id.isEmpty) {
-        return Result.error(
+        return const Result.error(
           ValidationFailure('Conflict but no id available in local data'),
         );
       }
@@ -376,7 +376,7 @@ class SyncService extends ChangeNotifier {
       bool appliedToServer = false;
       bool appliedLocally = false;
 
-      final encoder = JsonCodec();
+      const encoder = JsonCodec();
       final sameAsServer =
           encoder.encode(resolvedJson) == encoder.encode(serverMap);
 
@@ -574,7 +574,7 @@ class SyncService extends ChangeNotifier {
       pendingOperations: _syncStatus.pendingOperations,
       failedOperations: success ? 0 : (_syncStatus.failedOperations + 1),
       isSyncing: false,
-      lastError: error ?? null,
+      lastError: error,
     );
     _saveSyncStatus();
     notifyListeners();
@@ -636,7 +636,7 @@ class SyncService extends ChangeNotifier {
   void _startAutoSync() {
     _autoSyncTimer?.cancel();
     _autoSyncTimer = Timer.periodic(
-      Duration(minutes: SyncConstants.autoSyncIntervalMinutes),
+      const Duration(minutes: SyncConstants.autoSyncIntervalMinutes),
       (_) async {
         if (_connectivityService != null &&
             _connectivityService!.isOnline &&

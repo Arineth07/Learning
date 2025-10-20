@@ -34,14 +34,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('AI Tutor'),
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        actions: [
+        actions: const [
           // Compact sync status indicator
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: EdgeInsets.only(right: 8.0),
             child: SyncStatusWidget(compact: true),
           ),
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: EdgeInsets.only(right: 8.0),
             child: ConnectivityIndicator(),
           ),
         ],

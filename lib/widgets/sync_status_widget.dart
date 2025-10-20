@@ -27,8 +27,9 @@ class SyncStatusWidget extends StatelessWidget {
         final syncStatus = syncService.syncStatus;
         if (!queue.hasOperations() &&
             syncStatus.lastSyncedAt == null &&
-            !compact)
-          return SizedBox.shrink();
+            !compact) {
+          return const SizedBox.shrink();
+        }
         return Card(
           margin: const EdgeInsets.all(12),
           child: Padding(
@@ -38,7 +39,7 @@ class SyncStatusWidget extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.sync, color: Colors.blue),
+                    const Icon(Icons.sync, color: Colors.blue),
                     const SizedBox(width: 8),
                     Text(
                       'Sync Status',
@@ -52,7 +53,7 @@ class SyncStatusWidget extends StatelessWidget {
                 if (syncService.isSyncing || queue.isProcessing) ...[
                   Row(
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
@@ -64,7 +65,7 @@ class SyncStatusWidget extends StatelessWidget {
                 ] else if (queue.pendingCount > 0) ...[
                   Row(
                     children: [
-                      Icon(Icons.pending_actions, color: Colors.orange),
+                      const Icon(Icons.pending_actions, color: Colors.orange),
                       const SizedBox(width: 8),
                       Text('${queue.pendingCount} pending'),
                     ],
@@ -72,16 +73,16 @@ class SyncStatusWidget extends StatelessWidget {
                 ] else if (queue.failedCount > 0) ...[
                   Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red),
+                      const Icon(Icons.error_outline, color: Colors.red),
                       const SizedBox(width: 8),
                       Text('${queue.failedCount} failed'),
                     ],
                   ),
                 ] else ...[
-                  Row(
+                  const Row(
                     children: [
                       Icon(Icons.check_circle, color: Colors.green),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text('All synced'),
                     ],
                   ),
@@ -115,7 +116,7 @@ class SyncStatusWidget extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.warning, size: 16, color: Colors.red),
+                        const Icon(Icons.warning, size: 16, color: Colors.red),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(

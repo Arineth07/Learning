@@ -31,10 +31,7 @@ class _PerformanceTrendChartState extends State<PerformanceTrendChart> {
   }
 
   Future<Result<PerformanceTrend>> _loadTrend() {
-    final service = Provider.of<AdaptiveLearningService>(
-      context,
-      listen: false,
-    );
+    final service = context.read<AdaptiveLearningService>();
     return service.analyzePerformanceTrend(widget.userId, widget.subjectId);
   }
 
@@ -141,7 +138,7 @@ class _PerformanceTrendChartState extends State<PerformanceTrendChart> {
                                     dotData: const FlDotData(show: true),
                                     belowBarData: BarAreaData(
                                       show: true,
-                                      color: trendColor.withValues(alpha: 0.1),
+                                      color: trendColor.withOpacity(0.1),
                                     ),
                                   ),
                                 ],
@@ -153,13 +150,13 @@ class _PerformanceTrendChartState extends State<PerformanceTrendChart> {
                                   ),
                                 ),
                                 titlesData: FlTitlesData(
-                                  bottomTitles: AxisTitles(
+                                  bottomTitles: const AxisTitles(
                                     sideTitles: SideTitles(showTitles: false),
                                   ),
-                                  rightTitles: AxisTitles(
+                                  rightTitles: const AxisTitles(
                                     sideTitles: SideTitles(showTitles: false),
                                   ),
-                                  topTitles: AxisTitles(
+                                  topTitles: const AxisTitles(
                                     sideTitles: SideTitles(showTitles: false),
                                   ),
                                   leftTitles: AxisTitles(

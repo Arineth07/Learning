@@ -153,8 +153,9 @@ class LearningPaceChart extends StatelessWidget {
                                       reservedSize: 120,
                                       getTitlesWidget: (value, meta) {
                                         final idx = value.toInt();
-                                        if (idx < 0 || idx >= display.length)
+                                        if (idx < 0 || idx >= display.length) {
                                           return const SizedBox.shrink();
+                                        }
                                         return RotatedBox(
                                           quarterTurns: 1,
                                           child: Padding(
@@ -204,7 +205,7 @@ class LearningPaceChart extends StatelessWidget {
                                   ),
                                 ),
                                 barGroups: barGroups,
-                                gridData: FlGridData(
+                                gridData: const FlGridData(
                                   show: true,
                                   drawVerticalLine: false,
                                 ),

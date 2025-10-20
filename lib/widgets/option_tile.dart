@@ -79,10 +79,10 @@ class OptionTile extends StatelessWidget {
 
   Widget _buildLeadingIcon(BuildContext context) {
     if (isCorrect) {
-      return Icon(Icons.check_circle, color: Colors.green);
+      return const Icon(Icons.check_circle, color: Colors.green);
     }
     if (isIncorrect) {
-      return Icon(Icons.cancel, color: Colors.red);
+      return const Icon(Icons.cancel, color: Colors.red);
     }
     if (isSelected) {
       return Icon(
@@ -90,6 +90,6 @@ class OptionTile extends StatelessWidget {
         color: Theme.of(context).colorScheme.primary,
       );
     }
-    return Icon(Icons.radio_button_unchecked, color: Colors.grey);
+    return const Icon(Icons.radio_button_unchecked, color: Colors.grey);
   }
 }

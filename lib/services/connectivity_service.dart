@@ -17,7 +17,7 @@ class ConnectivityService extends ChangeNotifier {
   ConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  StreamSubscription<dynamic>? _connectivitySubscription;
   ConnectivityState _currentState = ConnectivityState.initial();
   List<SyncOperation> _syncQueue = [];
   SyncQueueState _queueState = SyncQueueState.empty();
@@ -44,7 +44,7 @@ class ConnectivityService extends ChangeNotifier {
   }
 
   Future<Result<void>> initialize() async {
-    if (_isInitialized) return Result.success(null);
+    if (_isInitialized) return const Result.success(null);
     try {
       _prefs = await SharedPreferences.getInstance();
       await _loadQueueFromStorage();
@@ -62,14 +62,32 @@ class ConnectivityService extends ChangeNotifier {
         offlineDuration: hasInternet ? null : Duration.zero,
       );
       _connectivityController.add(_currentState);
-      _connectivitySubscription =
-          _connectivity.onConnectivityChanged.listen(_onConnectivityChanged);
+      _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+        (result) {
+          // The connectivity stream signature can vary between versions/platforms:
+          // - Some emit a single ConnectivityResult
+          // - Others may emit List<ConnectivityResult>
+          if (result is List<ConnectivityResult>) {
+            _onConnectivityChanged(result);
+          } else if (result is ConnectivityResult) {
+            _onConnectivityChanged([result as ConnectivityResult]);
+          } else {
+            // Fallback: attempt to coerce to List<ConnectivityResult>
+            try {
+              final maybeList = result as List<ConnectivityResult>;
+              _onConnectivityChanged(maybeList);
+            } catch (_) {
+              // Unknown type: ignore the event
+            }
+          }
+        },
+      );
       if (ConnectivityConstants.enablePeriodicChecks) {
         _startPeriodicChecks();
       }
       _isInitialized = true;
       notifyListeners();
-      return Result.success(null);
+      return const Result.success(null);
     } catch (e, st) {
       return Result.error(
         ConnectivityFailure(
@@ -144,7 +162,7 @@ class ConnectivityService extends ChangeNotifier {
     try {
       final response = await http
           .get(Uri.parse(ConnectivityConstants.reachabilityCheckUrl))
-          .timeout(Duration(seconds: ConnectivityConstants.timeoutSeconds));
+          .timeout(const Duration(seconds: ConnectivityConstants.timeoutSeconds));
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (_) {
       return false;
@@ -154,7 +172,7 @@ class ConnectivityService extends ChangeNotifier {
   void _startPeriodicChecks() {
     _periodicCheckTimer?.cancel();
     _periodicCheckTimer = Timer.periodic(
-      Duration(seconds: ConnectivityConstants.checkIntervalSeconds),
+      const Duration(seconds: ConnectivityConstants.checkIntervalSeconds),
       (_) async {
         // Run reachability checks when device has a network interface (not strictly "online")
         if (_currentState.type != ConnectivityType.none) {
@@ -197,7 +215,7 @@ class ConnectivityService extends ChangeNotifier {
     int priority = 3,
   }) async {
     if (_syncQueue.length >= ConnectivityConstants.maxQueueSize) {
-      return Result.error(ValidationFailure('Sync queue is full'));
+      return const Result.error(ValidationFailure('Sync queue is full'));
     }
     final op = SyncOperation.create(
       id: const Uuid().v4(),
@@ -212,7 +230,7 @@ class ConnectivityService extends ChangeNotifier {
       await _processQueueOnReconnect();
     }
     notifyListeners();
-    return Result.success(null);
+    return const Result.success(null);
   }
 
   Future<void> _processQueueOnReconnect() async {
@@ -242,7 +260,7 @@ class ConnectivityService extends ChangeNotifier {
     // Schedule retries with exponential backoff so they don't block fresh ops
     for (final op in retryCandidates) {
       // compute exponential backoff delay: base * 2^(attemptCount - 1)
-      final base = ConnectivityConstants.retryDelaySeconds;
+      const base = ConnectivityConstants.retryDelaySeconds;
       final exponent = (op.attemptCount - 1).clamp(0, 30);
       final computed = base * (1 << exponent);
       final delaySeconds = computed > ConnectivityConstants.maxRetryDelaySeconds
@@ -368,7 +386,7 @@ class ConnectivityService extends ChangeNotifier {
       await _prefs!.remove(ConnectivityConstants.queueStorageKey);
     }
     notifyListeners();
-    return Result.success(null);
+    return const Result.success(null);
   }
 
   Future<Result<void>> retryFailedOperations() async {
@@ -396,7 +414,7 @@ class ConnectivityService extends ChangeNotifier {
       if (idx != -1) _syncQueue[idx] = pendingOp;
 
       // compute delay using exponential backoff
-      final base = ConnectivityConstants.retryDelaySeconds;
+      const base = ConnectivityConstants.retryDelaySeconds;
       final exponent = (op.attemptCount - 1).clamp(0, 30);
       final computed = base * (1 << exponent);
       final delaySeconds = computed > ConnectivityConstants.maxRetryDelaySeconds
@@ -416,7 +434,7 @@ class ConnectivityService extends ChangeNotifier {
     _updateQueueState();
     await _saveQueueToStorage();
     notifyListeners();
-    return Result.success(null);
+    return const Result.success(null);
   }
 
   bool isFeatureAvailable(String feature) {
@@ -425,7 +443,7 @@ class ConnectivityService extends ChangeNotifier {
   }
 
   Result<void> requiresOnline(String feature) {
-    if (isOnline) return Result.success(null);
+    if (isOnline) return const Result.success(null);
     return Result.error(
       ConnectivityFailure('$feature requires internet connection'),
     );

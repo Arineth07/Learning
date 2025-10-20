@@ -116,7 +116,7 @@ class LearningSessionRepositoryImpl implements LearningSessionRepository {
       final activeSession = matches.isNotEmpty ? matches.first : null;
 
       if (activeSession != null) {
-        return Result.error(
+        return const Result.error(
           ValidationFailure('User already has an active session'),
         );
       }
@@ -439,7 +439,7 @@ class LearningSessionRepositoryImpl implements LearningSessionRepository {
       }
 
       if (session.isCompleted) {
-        return Result.error(
+        return const Result.error(
           ValidationFailure('Cannot add results to a completed session'),
         );
       }
@@ -512,7 +512,7 @@ class LearningSessionRepositoryImpl implements LearningSessionRepository {
       }
 
       if (session.isCompleted) {
-        return Result.error(ValidationFailure('Session is already completed'));
+        return const Result.error(ValidationFailure('Session is already completed'));
       }
 
       final updated = LearningSession(
@@ -711,7 +711,7 @@ class LearningSessionRepositoryImpl implements LearningSessionRepository {
       );
 
       if (sessions.isEmpty) {
-        return Result.success(Duration.zero);
+        return const Result.success(Duration.zero);
       }
 
       final totalMinutes = sessions.fold<int>(

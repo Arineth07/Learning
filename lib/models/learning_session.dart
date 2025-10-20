@@ -98,19 +98,19 @@ class LearningSession {
             ) ??
             {},
         startTime: json['startTime'] != null
-            ? DateTime.parse(json['startTime'] as String)
-            : null,
+            ? DateTime.tryParse(json['startTime'] as String) ?? DateTime.now()
+            : DateTime.now(),
         endTime: json['endTime'] != null
-            ? DateTime.parse(json['endTime'] as String)
+            ? DateTime.tryParse(json['endTime'] as String)
             : null,
         totalTimeSpentMinutes: json['totalTimeSpentMinutes'] as int? ?? 0,
         accuracyRate: (json['accuracyRate'] as num?)?.toDouble() ?? 0.0,
         isCompleted: json['isCompleted'] as bool? ?? false,
         createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'] as String)
-            : null,
+            ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+            : DateTime.now(),
         updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'] as String)
-            : null,
+            ? DateTime.tryParse(json['updatedAt'] as String) ?? DateTime.now()
+            : DateTime.now(),
       );
 }

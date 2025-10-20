@@ -341,7 +341,7 @@ class PerformanceMetricsRepositoryImpl implements PerformanceMetricsRepository {
   ) async {
     try {
       if (rate < 0 || rate > 1) {
-        return Result.error(
+        return const Result.error(
           ValidationFailure('Accuracy rate must be between 0 and 1'),
         );
       }
@@ -409,7 +409,7 @@ class PerformanceMetricsRepositoryImpl implements PerformanceMetricsRepository {
   ) async {
     try {
       if (score < 0 || score > 1) {
-        return Result.error(
+        return const Result.error(
           ValidationFailure('Mastery score must be between 0 and 1'),
         );
       }

@@ -29,8 +29,9 @@ class CloudAICacheService {
   }
 
   void _checkInitialized() {
-    if (!_isInitialized)
+    if (!_isInitialized) {
       throw StateError('CloudAICacheService not initialized');
+    }
   }
 
   String generateCacheKey(
@@ -126,8 +127,9 @@ class CloudAICacheService {
     _memoryCache.clear();
     final keys = _prefs?.getKeys() ?? <String>{};
     for (final k in keys) {
-      if (k.startsWith(CloudAIConstants.cacheKeyPrefix))
+      if (k.startsWith(CloudAIConstants.cacheKeyPrefix)) {
         await _prefs?.remove(k);
+      }
     }
     await _saveCacheMetadata();
   }

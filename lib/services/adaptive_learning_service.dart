@@ -68,10 +68,10 @@ class AdaptiveLearningService extends ChangeNotifier {
 
       // Get recent results across last N questions from the most recent session
       final recentResults = <bool>[];
-      final maxRecentQuestions =
+      const maxRecentQuestions =
           AdaptiveLearningConstants.consecutiveCorrectToIncrease * 2;
 
-      if (!sessions.isEmpty) {
+      if (sessions.isNotEmpty) {
         final latestSession = sessions.first;
         // Convert questionResults map to list of entries for chronological ordering
         final orderedResults = latestSession.questionResults.entries.toList()
@@ -293,7 +293,7 @@ class AdaptiveLearningService extends ChangeNotifier {
       final topic = topicResult.fold((topic) => topic, (_) => null);
 
       if (topic == null) {
-        return Result.error(NotFoundFailure('Topic not found'));
+        return const Result.error(NotFoundFailure('Topic not found'));
       }
 
       // Get recent sessions
@@ -481,7 +481,7 @@ class AdaptiveLearningService extends ChangeNotifier {
       }
 
       if (sessions.length < AdaptiveLearningConstants.minSessionsForTrend) {
-        return Result.error(
+        return const Result.error(
           ValidationFailure(
             'Insufficient data: need at least ${AdaptiveLearningConstants.minSessionsForTrend} sessions',
           ),
@@ -661,7 +661,7 @@ class AdaptiveLearningService extends ChangeNotifier {
 
   Failure _mapException(Object e, StackTrace st) {
     if (e is TimeoutException) {
-      return TimeoutFailure('Operation timed out');
+      return const TimeoutFailure('Operation timed out');
     } else if (e is StateError) {
       return ValidationFailure(e.toString());
     } else if (e is DatabaseException) {

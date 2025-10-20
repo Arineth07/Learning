@@ -130,8 +130,9 @@ class ApiClient {
       final resp = await _httpClient
           .delete(uri, headers: _buildHeaders(headers))
           .timeout(SyncConstants.apiTimeout);
-      if (resp.statusCode >= 200 && resp.statusCode < 300)
-        return Result.success(null);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        return const Result.success(null);
+      }
       final failure = _mapHttpError(resp);
       return Result.error(failure);
     } on SocketException catch (e, st) {
@@ -342,11 +343,11 @@ class ApiClient {
   Future<Result<Map<String, dynamic>>> _retryCloudAIRequest(
     Future<Result<Map<String, dynamic>>> Function() requestFn,
   ) async {
-    Result<Map<String, dynamic>> lastResult = Result.error(
+    Result<Map<String, dynamic>> lastResult = const Result.error(
       UnknownFailure('No attempts made'),
     );
     int attempts = 0;
-    final maxAttempts = (CloudAIConstants.maxCloudAIRetries <= 0)
+    const maxAttempts = (CloudAIConstants.maxCloudAIRetries <= 0)
         ? 1
         : (CloudAIConstants.maxCloudAIRetries + 1);
     while (attempts < maxAttempts) {
@@ -386,18 +387,21 @@ class ApiClient {
     String message = 'HTTP $code';
     try {
       final parsed = body.isNotEmpty ? jsonDecode(body) : null;
-      if (parsed is Map && parsed['message'] != null)
+      if (parsed is Map && parsed['message'] != null) {
         message = parsed['message'].toString();
+      }
     } catch (_) {}
 
     if (code == 400) return ValidationFailure('Bad request: $message');
-    if (code == 401 || code == 403)
+    if (code == 401 || code == 403) {
       return AuthenticationFailure('Authentication failed: $message');
+    }
     if (code == 404) return NotFoundFailure('Not found: $message');
     if (code == 409) return ConflictFailure('Conflict: $message');
     if (code == 429) return RateLimitFailure('Rate limited: $message');
-    if (code >= 500 && code < 600)
+    if (code >= 500 && code < 600) {
       return ServerFailure('Server error: $message');
+    }
     return UnknownFailure('Unexpected HTTP status $code: $message');
   }
 

@@ -178,10 +178,10 @@ class SyncDebugScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text('Debug Info', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text('Base URL: ${SyncConstants.baseUrl}'),
-            Text('API Version: ${SyncConstants.apiVersion}'),
-            Text('Auto-sync enabled: ${SyncConstants.enableAutoSync}'),
-            Text(
+            const Text('Base URL: ${SyncConstants.baseUrl}'),
+            const Text('API Version: ${SyncConstants.apiVersion}'),
+            const Text('Auto-sync enabled: ${SyncConstants.enableAutoSync}'),
+            const Text(
               'Conflict strategy: ${SyncConstants.conflictResolutionStrategy}',
             ),
           ],

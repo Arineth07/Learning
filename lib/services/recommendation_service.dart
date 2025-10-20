@@ -84,7 +84,7 @@ class RecommendationService extends ChangeNotifier {
       );
       return await topicsResult.fold((topics) async {
         if (topics.isEmpty) {
-          return Result.error(ValidationFailure('No topics found for subject'));
+          return const Result.error(ValidationFailure('No topics found for subject'));
         }
         final recsResult = await getTopicRecommendations(
           userId,
@@ -113,7 +113,7 @@ class RecommendationService extends ChangeNotifier {
       );
       return await topicsResult.fold((topics) async {
         if (topics.isEmpty) {
-          return Result.error(ValidationFailure('No topics found for subject'));
+          return const Result.error(ValidationFailure('No topics found for subject'));
         }
 
         // Try Cloud AI path first when allowed
@@ -159,8 +159,9 @@ class RecommendationService extends ChangeNotifier {
                       final cloudRec = CloudAITopicRecommendation.fromJson(
                         item as Map<String, dynamic>,
                       );
-                      if (!cloudRec.shouldFallback())
+                      if (!cloudRec.shouldFallback()) {
                         parsed.add(cloudRec.recommendation);
+                      }
                     } catch (_) {}
                   }
                   if (parsed.isNotEmpty) {
@@ -191,8 +192,9 @@ class RecommendationService extends ChangeNotifier {
                           final cloudRec = CloudAITopicRecommendation.fromJson(
                             item as Map<String, dynamic>,
                           );
-                          if (!cloudRec.shouldFallback())
+                          if (!cloudRec.shouldFallback()) {
                             parsed.add(cloudRec.recommendation);
+                          }
                         } catch (_) {}
                       }
                     } else if (data['recommendation'] != null) {
@@ -200,8 +202,9 @@ class RecommendationService extends ChangeNotifier {
                         final cloudRec = CloudAITopicRecommendation.fromJson(
                           data,
                         );
-                        if (!cloudRec.shouldFallback())
+                        if (!cloudRec.shouldFallback()) {
                           parsed.add(cloudRec.recommendation);
+                        }
                       } catch (_) {}
                     }
                     if (parsed.isNotEmpty) cloudParsed = parsed;
@@ -215,7 +218,7 @@ class RecommendationService extends ChangeNotifier {
               );
             }
             if (cloudParsed != null && cloudParsed!.isNotEmpty) {
-              if (cacheKey != null)
+              if (cacheKey != null) {
                 unawaited(
                   _cacheService?.put(cacheKey, {
                     'recommendations': cloudParsed!
@@ -223,6 +226,7 @@ class RecommendationService extends ChangeNotifier {
                         .toList(),
                   }, ttl: CloudAIConstants.cacheDuration),
                 );
+              }
               _abTestService?.trackRecommendationUsed('topic', 'cloud_ai');
               return Result.success(cloudParsed!.take(limit).toList());
             }
@@ -300,14 +304,17 @@ class RecommendationService extends ChangeNotifier {
   bool _shouldUseCloudAI(String method) {
     if (!CloudAIConstants.enableCloudAI) return false;
     if (!(_connectivityService?.isOnline ?? false)) return false;
-    if (!(_connectivityService?.isFeatureAvailable('cloud_ai') ?? false))
+    if (!(_connectivityService?.isFeatureAvailable('cloud_ai') ?? false)) {
       return false;
+    }
     if (!(_abTestService?.shouldUseCloudAI(method) ?? true)) return false;
     // method specific flags
-    if (method == 'practice' && !CloudAIConstants.enableCloudPracticeGeneration)
+    if (method == 'practice' && !CloudAIConstants.enableCloudPracticeGeneration) {
       return false;
-    if (method == 'topic' && !CloudAIConstants.enableCloudTopicRecommendations)
+    }
+    if (method == 'topic' && !CloudAIConstants.enableCloudTopicRecommendations) {
       return false;
+    }
     return true;
   }
 
@@ -633,9 +640,10 @@ class RecommendationService extends ChangeNotifier {
               final singleRes = await _userProgressRepository!
                   .getByUserAndTopic(userId, topicId);
               singleRes.fold((up) {
-                if (up != null)
+                if (up != null) {
                   topicMasteryScores[topicId] =
                       (up.averageScore as double?) ?? up.averageScore;
+                }
               }, (_) {});
             }
           } catch (_) {
@@ -678,7 +686,7 @@ class RecommendationService extends ChangeNotifier {
                     topicId,
                     params: {'count': count, 'difficulty': difficulty?.index},
                   );
-                  if (cacheKey != null)
+                  if (cacheKey != null) {
                     unawaited(
                       _cacheService?.put(
                         cacheKey,
@@ -686,6 +694,7 @@ class RecommendationService extends ChangeNotifier {
                         ttl: CloudAIConstants.cacheDuration,
                       ),
                     );
+                  }
                   _abTestService?.trackRecommendationUsed(
                     'practice',
                     'cloud_ai',
@@ -763,8 +772,9 @@ class RecommendationService extends ChangeNotifier {
         subjectId,
       );
       final topics = topicsRes.fold((t) => t, (_) => <Topic>[]);
-      if (topics.isEmpty)
-        return Result.error(ValidationFailure('No topics found'));
+      if (topics.isEmpty) {
+        return const Result.error(ValidationFailure('No topics found'));
+      }
 
       // 2) Fetch knowledge gaps and user progress
       final gapsRes = await _knowledgeGapService!.buildPracticeForAllGaps(
@@ -844,7 +854,7 @@ class RecommendationService extends ChangeNotifier {
               try {
                 final cloudPath = CloudAILearningPath.fromJson(cloudResult);
                 if (!cloudPath.shouldFallback()) {
-                  if (cacheKey != null)
+                  if (cacheKey != null) {
                     unawaited(
                       _cacheService?.put(
                         cacheKey,
@@ -852,6 +862,7 @@ class RecommendationService extends ChangeNotifier {
                         ttl: CloudAIConstants.cacheDuration,
                       ),
                     );
+                  }
                   _abTestService?.trackRecommendationUsed('path', 'cloud_ai');
                   return Result.success(cloudPath.path);
                 } else {
@@ -1118,7 +1129,7 @@ class RecommendationService extends ChangeNotifier {
       );
       final practiceResult = await nextTopicResult.fold(
         (next) async => await getRecommendedPracticeSet(userId, next.topicId),
-        (f) async => Result.error(UnknownFailure('No next topic')),
+        (f) async => const Result.error(UnknownFailure('No next topic')),
       );
       // Populate critical gaps (topics with high/critical severity)
       final criticalGaps = <String>[];
@@ -1249,8 +1260,9 @@ class RecommendationService extends ChangeNotifier {
           // priority is int; normalize to 0..1 assuming max 5
           reviewPriorityScore = (schedule.priority / 5.0).clamp(0.0, 1.0);
           // inflate if overdue
-          if (schedule.isOverdue)
+          if (schedule.isOverdue) {
             reviewPriorityScore = reviewPriorityScore.clamp(0.6, 1.0);
+          }
         } catch (_) {
           // not in review list -> keep 0
         }
@@ -1406,20 +1418,22 @@ class RecommendationService extends ChangeNotifier {
     double engagement,
   ) {
     if (urgency >= 0.85) return 'Critical knowledge gap detected';
-    if (readiness >= 0.85)
+    if (readiness >= 0.85) {
       return 'Ready to advance after mastering prerequisites';
+    }
     if (impact >= 0.8) return 'Foundational topic for future learning';
     if (engagement >= 0.8) return 'High engagement, keep up the momentum!';
     return 'Balanced recommendation based on your progress.';
   }
 
   void _checkInitialized() {
-    if (!_isInitialized)
+    if (!_isInitialized) {
       throw StateError('RecommendationService not initialized');
+    }
   }
 
   Failure _mapException(Object e, StackTrace st) {
-    if (e is TimeoutException) return TimeoutFailure('Operation timed out');
+    if (e is TimeoutException) return const TimeoutFailure('Operation timed out');
     if (e is StateError) return ValidationFailure(e.toString());
     return UnknownFailure('Unknown error: $e');
   }

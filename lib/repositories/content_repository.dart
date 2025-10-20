@@ -243,7 +243,7 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
       final currentTopic = _contentService.getTopicById(currentTopicId);
       if (currentTopic == null) {
-        return Result.error(NotFoundFailure('Current topic not found'));
+        return const Result.error(NotFoundFailure('Current topic not found'));
       }
 
       final subjectTopics = _contentService.getTopicsBySubjectId(
@@ -389,7 +389,7 @@ class ContentRepositoryImpl implements ContentRepository {
       _checkInitialized();
 
       if (count < 1) {
-        return Result.error(ValidationFailure('Count must be positive'));
+        return const Result.error(ValidationFailure('Count must be positive'));
       }
 
       var questions = _contentService.getQuestionsByTopicId(topicId);
@@ -403,7 +403,7 @@ class ContentRepositoryImpl implements ContentRepository {
       }
 
       if (questions.isEmpty) {
-        return Result.error(
+        return const Result.error(
           NotFoundFailure('No questions found matching criteria'),
         );
       }
